@@ -4,6 +4,7 @@ import exception
 import planet
 
 # Tables -----------------------------------------------------------------------
+# SWN tables
 TABLE_ATMOSPHERE = {
     2:  'Corrosive',
     3:  'Inert gas',
@@ -150,6 +151,16 @@ TABLE_TECH_LEVEL = {
     12: '5' 
 }
 
+TABLE_TECH_LEVEL_REVERSE = {
+    '0':  0,
+    '1':  1,
+    '2':  2,
+    '3':  3,
+    '4':  4,
+    '4+': 5,
+    '5':  6
+}
+
 TABLE_TEMPERATURE = {
     2:  'Frozen',
     3:  'Cold-to-temperate',
@@ -162,6 +173,21 @@ TABLE_TEMPERATURE = {
     10: 'Warm',
     11: 'Temperate-to-warm',
     12: 'Burning'
+}
+
+# One Roll Star System tables
+TABLE_MAIN_WORLD_ORBIT_TEMP_MOD = {
+    'Frozen':             2,
+    'Cold-to-temperate':  1,
+    'Cold':               1,
+    'Cold':               1,
+    'Temperate':          0,
+    'Temperate':          0,
+    'Temperate':          0,
+    'Warm':              -1,
+    'Warm':              -1,
+    'Temperate-to-warm':  0,
+    'Burning':           -2
 }
 
 # World class ------------------------------------------------------------------

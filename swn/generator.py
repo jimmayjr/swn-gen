@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import numpy as np
+import operator
 
 import corporation
 import exception
@@ -310,7 +311,7 @@ class Generator(object):
                 if (nameLoopCount>100):
                     raise exception.MaxLoopIterationsExceed(MAX_LOOP_ITER)
             newSector.addBlankSystem(newSystemName,newRow,newCol)
-            # Update count of created stars
+            # Update count of created systems
             sCount += 1
             # Catch runaway loop
             loopCount +=1
@@ -373,6 +374,92 @@ class Generator(object):
                                        temperature   = temperatue,
                                        techLevel     = techLevel)
                 systemObj.worlds.append(newWorld)
+
+        # Fill system data -----------------------------------------------------
+        # Use one roll star system (ORSS) rules
+        for systemKey in newSector.sortedSystems():
+            # Get current system
+            systemObj = newSector.systems[systemKey]
+            # Rolls (ORSS)
+            d4  = random.diceRoll(1,4)
+            d6  = random.diceRoll(1,6)
+            d8  = random.diceRoll(1,8)
+            d10 = random.diceRoll(1,10)
+            d12 = random.diceRoll(1,12)
+            d20 = random.diceRoll(1,20)
+            # Get main world from system (i.e. the first in the list with the highest TL TL)
+            mainWorld = max(systemObj.worlds,key=lambda w: world.TABLE_TECH_LEVEL_REVERSE[w.techLevel])
+            # Get main world orbit temperature mod
+            d12Mod = d12 + world.TABLE_MAIN_WORLD_ORBIT_TEMP_MOD[mainWorld.temperature]
+            # At this point, the modified d12 roll cannot be lower than 1
+            if (d12Mod < 1):
+                d12Mod = 1
+            # Check d6 to determine usage of d4 and d12 rolls (ORSS)
+            d4Mod = d4
+            #    If d6 is 1, d4 becomes single red dwarf star system (ORSS)
+            if ( d6 == 1):
+                d4Mod  = 1
+                d12Mod = 0
+            #    If d6 is 2 or 3 and d4 is 4 add 12 to d12 (ORSS)
+            elif ( (d6==2) or (d6==3) ):
+                if ( d4 == 4):
+                    d12Mod += 12
+            #    If d6 is 4, add 1 to d4
+            elif ( d6 == 6):
+                d4Mod += 1
+            # Main world orbit
+            #    d6 table is base orbit position
+            mainOrbit  = system.TABLE_MAIN_WORLD_ORBIT[d6]
+            #    d12 table modifies orbit position
+            mainOrbit += system.TABLE_MAIN_WORLD_ORBIT_MOD[d12Mod]
+            # First star color and spectral subclass
+            color            = star.TABLE_COLOR[star.TABLE_COLOR_ID[d12Mod]]
+            colorText        = star.TABLE_COLOR_TEXT[d12Mod]
+            spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10]
+            # Add first star
+            systemObj.stars.append(star.Star(color,colorText,spectralSubclass))
+            # Use modified d4 to determine if there should be a second star (ORSS)
+            numStars = system.TABLE_STARS_PER_SYSTEM[d4Mod]
+            # Add 2nd star if necessary
+            if ( numStars > 1 ):
+                # 2nd star has +4 to existing d12 roll(ORSS)
+                d12Mod += 4
+                # 2nd star has alternate d10 roll (ORSS)    
+                d10Mod   = random.diceRoll(1,10)
+                # d12 table modifies orbit position
+                mainOrbit += system.TABLE_MAIN_WORLD_ORBIT_MOD[d12Mod]
+                # Second star color and spectral subclass
+                color            = star.TABLE_COLOR[star.TABLE_COLOR_ID[d12Mod]]
+                colorText        = star.TABLE_COLOR_TEXT[d12Mod]
+                spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10Mod]
+                # Add star
+                systemObj.stars.append(star.Star(color,colorText,spectralSubclass))
+
+            # DEBUG
+            #print('Rolls')
+            #ollString  =  '{:>2},'.format(d4)
+            #rollString += ' {:>2},'.format(d6)
+            #rollString += ' {:>2},'.format(d8)
+            #rollString += ' {:>2},'.format(d10)
+            #rollString += ' {:>2},'.format(d12)
+            #rollString += ' {:>2}'.format(d20)
+            #print(rollString)
+            #print('Modified Rolls')
+            #modRollString  =  '{:>2},'.format(d4Mod)
+            #modRollString += ' {:>2},'.format('')
+            #modRollString += ' {:>2},'.format('')
+            #modRollString += ' {:>2},'.format('')
+            #modRollString += ' {:>2},'.format('')
+            #modRollString += ' {:>2}'.format('')
+            #print(modRollString)
+            #print(numStars)
+            #for (tcKey,tcText) in star.TABLE_COLOR_TEXT.iteritems():
+            #    print('{0:>2d}: {1}'.format(tcKey,tcText))
+            #for systemKey in newSector.sortedSystems():
+            #    if (len(newSector.systems[systemKey].stars)>0):
+            #        print(systemKey)
+            #        for sta in newSector.systems[systemKey].stars:
+            #            print(sta.color,sta.spectralSubclass)
 
         # Add corporations -----------------------------------------------------
         for i in xrange(MAX_CORPORATIONS):

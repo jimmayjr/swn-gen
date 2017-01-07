@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+# Argument checker
+def ArgCheck(argName,argType):
+    if not (isinstance(argName,argType)):
+        raise exception.InvalidArgType(argName,argType)
+
 # Exceptions -------------------------------------------------------------------
 class ExistingDictKey(Exception):
     def __init__(self,key):
