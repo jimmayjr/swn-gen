@@ -9,7 +9,7 @@ import operator
 import exception
 import generator
 import hexutils
-import star
+import system
 
 MAX_ROWS = 10
 MAX_COLS = 8
@@ -29,19 +29,19 @@ class Sector(object):
         self.heresies = list()
         self.parties = list()
         self.religions = list()
-        self.stars = dict()
+        self.systems = dict()
 
     def addBlankSystem(self,sName,sRow,sCol):
         if (not self.hexEmpty(sRow,sCol)):
             raise exception.ExistingDictKey((sRow,sCol))
         else:
-            self.stars[(sRow,sCol)] = star.System(name = sName,
-                                                  stars = list(),
-                                                  planets = list(),
-                                                  worlds = list())
+            self.systems[(sRow,sCol)] = system.System(name = sName,
+                                                      stars = list(),
+                                                      planets = list(),
+                                                      worlds = list())
 
     def hexEmpty(self,sRow,sCol):
-        return(not self.stars.has_key((sRow,sCol)))
+        return(not self.systems.has_key((sRow,sCol)))
 
     def printCorporations(self):
         # Caclulate lengths
@@ -191,10 +191,10 @@ class Sector(object):
         # Check all systems
         for systemKey in self.sortedSystems():
             # System name length
-            if ( len(self.stars[systemKey].name) > systemLen ):
-                systemLen =  len(self.stars[systemKey].name)
+            if ( len(self.systems[systemKey].name) > systemLen ):
+                systemLen =  len(self.systems[systemKey].name)
             # Check all worlds
-            for w in self.stars[systemKey].worlds:
+            for w in self.systems[systemKey].worlds:
                 # World name length
                 if ( len(w.name) > worldLen ):
                     worldLen =  len(w.name)
@@ -279,13 +279,13 @@ class Sector(object):
         sIndex = 0
         for systemKey in self.sortedSystems():
             wIndex = 0
-            indexText = [''] * len(self.stars[systemKey].worlds)
+            indexText = [''] * len(self.systems[systemKey].worlds)
             indexText[0] = str(sIndex)
-            systemHexText = [''] * len(self.stars[systemKey].worlds)
+            systemHexText = [''] * len(self.systems[systemKey].worlds)
             systemHexText[0] = '0{0}0{1}'.format(systemKey[0],systemKey[1])
-            systemNameText = [''] * len(self.stars[systemKey].worlds)
-            systemNameText[0] = self.stars[systemKey].name
-            for w in self.stars[systemKey].worlds:
+            systemNameText = [''] * len(self.systems[systemKey].worlds)
+            systemNameText[0] = self.systems[systemKey].name
+            for w in self.systems[systemKey].worlds:
                 line = lineBegin
                 line += indexText[wIndex].rjust(2).ljust(indexLen)
                 line += sep
@@ -444,7 +444,7 @@ class Sector(object):
         print(border)
 
     def sortedSystems(self):
-        return(sorted(self.stars.iterkeys(),key=lambda e: (e[1], e[0])))
+        return(sorted(self.systems.iterkeys(),key=lambda e: (e[1], e[0])))
 
     def systemDistances(self):
         systems = self.sortedSystems()
@@ -475,10 +475,10 @@ class Sector(object):
                 # Sum of distances between stars
                 sumDist = 0
                 # Ignore hexes where there is already a system
-                if ( not self.stars.has_key((row,col)) ):
+                if ( not self.systems.has_key((row,col)) ):
                     systemDistancesCalc = self.systemDistances()
                     # Add new row for new system
-                    systemDistancesCalc.append([0] * (len(self.stars) + 1))
+                    systemDistancesCalc.append([0] * (len(self.systems) + 1))
                     # For each system
                     for sAIndex in xrange(0,len(systems)):
                         # Calculate distances for new system
@@ -568,7 +568,7 @@ class Sector(object):
         for nh in neighborHexes:
             # Actual systems have index in keylist
             try:
-                self.stars.keys().index(nh)
+                self.systems.keys().index(nh)
                 # Get current star neighboring star systems
                 neighborSystems.append(nh)
             except ValueError:

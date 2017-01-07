@@ -12,6 +12,7 @@ import random
 import religion
 import sector
 import star
+import system
 import world
 
 MAX_LOOP_ITER    = 100
@@ -319,11 +320,11 @@ class Generator(object):
         # Add worlds -----------------------------------------------------------
         worldCount = 0
         for systemKey in newSector.sortedSystems():
-            system = newSector.stars[systemKey]
+            systemObj = newSector.systems[systemKey]
             # If world count has reached max, limit number of new worlds to one
             #    per system
             if ( worldCount < MAX_WORLDS):
-                numWorlds = star.TABLE_WORLDS_PER_SYSTEM[random.diceRoll(1,10)]
+                numWorlds = system.TABLE_WORLDS_PER_SYSTEM[random.diceRoll(1,10)]
                 worldCount += numWorlds
             else:
                 numWorlds = 1
@@ -371,7 +372,7 @@ class Generator(object):
                                        tags          = [tag1,tag2],
                                        temperature   = temperatue,
                                        techLevel     = techLevel)
-                system.worlds.append(newWorld)
+                systemObj.worlds.append(newWorld)
 
         # Add corporations -----------------------------------------------------
         for i in xrange(MAX_CORPORATIONS):
