@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import exception
-import planet
+import orbitalobject
 
 # Tables -----------------------------------------------------------------------
 # SWN tables
@@ -191,7 +191,7 @@ TABLE_MAIN_WORLD_ORBIT_TEMP_MOD = {
 }
 
 # World class ------------------------------------------------------------------
-class World(planet.BasePlanet):
+class World(object):
     def __init__(self,
                  name = '',
                  atmosphere = '',

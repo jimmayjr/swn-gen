@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 import exception
+import orbitalobject
+import star
 
 # Tables -----------------------------------------------------------------------
 # SWN tables
 # Inhabited worlds per system
-TABLE_WORLDS_PER_SYSTEM = {
+TABLE_WORLDS = {
     1:  1,
     2:  1,
     3:  1,
@@ -19,6 +21,83 @@ TABLE_WORLDS_PER_SYSTEM = {
 }
 
 # One Roll Star System tables
+# Number of hydrocarbon asteroid belts per system
+TABLE_HYDROCARBON_ASTEROID_BELTS = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+    7: 0,
+    8: 1
+}
+
+# Number of icy asteroid belts per system
+TABLE_ICY_ASTEROID_BELTS = {
+    1: 1,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+    7: 1,
+    8: 0
+}
+
+# Number of metallic asteroid belts per system
+TABLE_METALLIC_ASTEROID_BELTS = {
+    1: 0,
+    2: 1,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 0,
+    7: 0,
+    8: 1
+}
+
+# Number of rocky asteroid belts per system
+TABLE_ROCKY_ASTEROID_BELTS = {
+    1: 1,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+    6: 1,
+    7: 0,
+    8: 0
+}
+
+
+# Number of large gas giants per system
+TABLE_GAS_GIANT_LARGE = {
+    1:  1,
+    2:  1,
+    3:  1,
+    4:  0,
+    5:  0,
+    6:  0,
+    7:  1,
+    8:  0,
+    9:  2,
+    10: 2
+}
+
+# Number of small gas giants per system
+TABLE_GAS_GIANT_SMALL = {
+    1:  2,
+    2:  1,
+    3:  0,
+    4:  1,
+    5:  0,
+    6:  1,
+    7:  0,
+    8:  2,
+    9:  0,
+    10: 1
+}
+
 # Main world orbit
 TABLE_MAIN_WORLD_ORBIT = {}
 for i in xrange(1,4):
@@ -40,7 +119,7 @@ for i in xrange(13,31):
     TABLE_MAIN_WORLD_ORBIT_MOD[i] = 1
 
 # Number of stars per system
-TABLE_STARS_PER_SYSTEM = {
+TABLE_STARS = {
     1: 1,
     2: 1,
     3: 1,
@@ -53,7 +132,7 @@ class System(object):
     def __init__(self,
                  name = '',
                  stars = list(),
-                 planets = list(),
+                 objects = list(),
                  worlds = list()):
         # Check arguments
         #   name
@@ -64,13 +143,13 @@ class System(object):
             raise exception.InvalidArgType(stars,list)
         for s in stars:
             if not (isinstance(s,Star)):
-                raise exception.InvalidListItemType(s,Star)
-        #   planets
-        if not (isinstance(planets,list)):
-            raise exception.InvalidArgType(planets,list)
-        for p in planets:
-            if not (isinstance(p,planet.BasePlanet)):
-                raise exception.InvalidListItemType(p,planet.BasePlanet)
+                raise exception.InvalidListItemType(s,star.Star)
+        #   orbital objects
+        if not (isinstance(objects,list)):
+            raise exception.InvalidArgType(objects,list)
+        for o in objects:
+            if not (isinstance(o,orbitalobject.BaseObject)):
+                raise exception.InvalidListItemType(o,orbitalobject.BaseObject)
         
         # General information
         self.name = name
@@ -79,5 +158,5 @@ class System(object):
         self.worlds = worlds
 
         # System generator rolled information
-        self.planets = planets
+        self.objects = objects
         self.stars = stars

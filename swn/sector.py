@@ -37,7 +37,7 @@ class Sector(object):
         else:
             self.systems[(sRow,sCol)] = system.System(name = sName,
                                                       stars = list(),
-                                                      planets = list(),
+                                                      objects = list(),
                                                       worlds = list())
 
     def hexEmpty(self,sRow,sCol):

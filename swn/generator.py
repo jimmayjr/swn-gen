@@ -9,6 +9,7 @@ import corporation
 import exception
 import hexutils
 import name
+import orbitalobject
 import random
 import religion
 import sector
@@ -325,7 +326,7 @@ class Generator(object):
             # If world count has reached max, limit number of new worlds to one
             #    per system
             if ( worldCount < MAX_WORLDS):
-                numWorlds = system.TABLE_WORLDS_PER_SYSTEM[random.diceRoll(1,10)]
+                numWorlds = system.TABLE_WORLDS[random.diceRoll(1,10)]
                 worldCount += numWorlds
             else:
                 numWorlds = 1
@@ -387,7 +388,7 @@ class Generator(object):
             d10 = random.diceRoll(1,10)
             d12 = random.diceRoll(1,12)
             d20 = random.diceRoll(1,20)
-            # Get main world from system (i.e. the first in the list with the highest TL TL)
+            # Get main world from system (i.e. the first in the list with the highest TL)
             mainWorld = max(systemObj.worlds,key=lambda w: world.TABLE_TECH_LEVEL_REVERSE[w.techLevel])
             # Get main world orbit temperature mod
             d12Mod = d12 + world.TABLE_MAIN_WORLD_ORBIT_TEMP_MOD[mainWorld.temperature]
@@ -419,21 +420,181 @@ class Generator(object):
             # Add first star
             systemObj.stars.append(star.Star(color,colorText,spectralSubclass))
             # Use modified d4 to determine if there should be a second star (ORSS)
-            numStars = system.TABLE_STARS_PER_SYSTEM[d4Mod]
-            # Add 2nd star if necessary
+            numStars = system.TABLE_STARS[d4Mod]
+            # Add 2nd star if necessary (ORSS)
             if ( numStars > 1 ):
                 # 2nd star has +4 to existing d12 roll(ORSS)
                 d12Mod += 4
                 # 2nd star has alternate d10 roll (ORSS)    
                 d10Mod   = random.diceRoll(1,10)
-                # d12 table modifies orbit position
+                # d12 table modifies orbit position (ORSS)
                 mainOrbit += system.TABLE_MAIN_WORLD_ORBIT_MOD[d12Mod]
-                # Second star color and spectral subclass
+                # Second star color and spectral subclass (ORSS)
                 color            = star.TABLE_COLOR[star.TABLE_COLOR_ID[d12Mod]]
                 colorText        = star.TABLE_COLOR_TEXT[d12Mod]
                 spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10Mod]
                 # Add star
                 systemObj.stars.append(star.Star(color,colorText,spectralSubclass))
+            # Asteroid belts (ORSS)
+            numHydrocarbonBelts = system.TABLE_HYDROCARBON_ASTEROID_BELTS[d8]
+            numIcyBelts         = system.TABLE_ICY_ASTEROID_BELTS[d8]
+            numMetallicBelts    = system.TABLE_METALLIC_ASTEROID_BELTS[d8]
+            numRockyBelts       = system.TABLE_ROCKY_ASTEROID_BELTS[d8]
+            # Gas giants (ORSS)
+            numSmallGas = system.TABLE_GAS_GIANT_SMALL[d10]
+            numLargeGas = system.TABLE_GAS_GIANT_LARGE[d10]
+            # Create list of gas giants
+            gasList  = [orbitalobject.Planet(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_GAS']) for sg in xrange(numSmallGas)]
+            gasList += [orbitalobject.Planet(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['LARGE_GAS']) for lg in xrange(numLargeGas)]
+            np.random.shuffle(gasList)
+            # Add moons and rings to gas giants. Will replace with main world moons and rings if necessary.
+            for gl in gasList:
+                # Roll a d20 to determine the number of moons and rings for the giant
+                gasD20 = random.diceRoll(1,20)
+                # Number of each type of moon
+                numGasSmallMoons  = orbitalobject.TABLE_SMALL_MOONS[gasD20]
+                numGasMediumMoons = orbitalobject.TABLE_MEDIUM_MOONS[gasD20]
+                # Does the giant have rings
+                gl.rings = orbitalobject.TABLE_MINOR_RINGS[gasD20]
+                # Create the moons
+                gasMoonList  = [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']) for sm in xrange(numGasSmallMoons)]
+                gasMoonList += [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['MEDIUM_MOON']) for mm in xrange(numGasMediumMoons)]
+                # Shuffle moons into random order
+                np.random.shuffle(gasMoonList)
+                # Add moons to the gas giant
+                gl.moons = gasMoonList
+            # Total number of objects (ORSS)
+            numObjects = d4 + d8 - 1
+            # Place objects in orbits
+            # Create an empty list of orbital objects
+            orbitalList = list()
+            for o in xrange(numObjects):
+                orbitalList.append(None)
+            # Check if orbitalList is long enough
+            if ( mainOrbit > len(orbitalList) ):
+                # Add extra blank spaces if list is not long enough
+                for o in xrange(mainOrbit-len(orbitalList)):
+                    orbitalList.append(None)
+            # Fill main world orbit
+            numMainSmallMoons  = orbitalobject.TABLE_SMALL_MOONS[d20]
+            numMainMediumMoons = orbitalobject.TABLE_MEDIUM_MOONS[d20]
+            moonList  = [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']) for sm in xrange(numMainSmallMoons)]
+            moonList += [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['MEDIUM_MOON']) for mm in xrange(numMainMediumMoons)]
+            np.random.shuffle(moonList)
+            #    If airless or thin, determine which one
+            #    On a d2, 1 is airless, 2 is thin
+            #    Airless are going to be space stations or moon bases
+            #    Thin are going to be thin atmosphere rocky planets
+            if (random.diceRoll(1,2) == 1):
+                # If airless, world is a moon or space station
+                # If main world table rolls has moons, it is a moon, else it is a station
+                if ( numMainSmallMoons + numMainMediumMoons > 0 ):
+                    isMoon    = True
+                    isStation = False
+                    # If main world is a moon, is it a moon of a gas giant or rocky world
+                    # If the system has gas giants, it is a gas giant moon
+                    # Else it is a moon of a rocky planet (should be rare)
+                    if ( numSmallGas + numLargeGas > 0):
+                        ofGas = True
+                    else:
+                        ofGas = False
+                else:
+                    isMoon    = False
+                    isStation = True
+                    # If the main world is a space station, is it a space station of a gas giant or rocky world
+                    # If the system has gas giants, it is a gas giant station
+                    # Else it is a station of a rocky planet (should be rare)
+                    if ( numSmallGas + numLargeGas > 0):
+                        ofGas = True
+                    else:
+                        ofGas = False
+            else:
+                # Main world is just a thin atmosphere rocky planet
+                isMoon    = False
+                isStation = False
+                ofGas     = False
+            #    Does it have rings
+            hasRings = orbitalobject.TABLE_MINOR_RINGS[d20]
+            # Insert main world
+            # Moon of another body
+            if ( isMoon ):
+                # Attach main world to a moon
+                moonList[random.diceRoll(1,len(moonList))-1].world = mainWorld
+                # Moon of a gas giant
+                if ( ofGas ):
+                    # Get gas giant to attach world as a moon to
+                    gasGiant = gasList.pop(0)
+                    # Replace gas giant moon list
+                    gasGiant.moons = moonList
+                    # Add rings to gas giant if necessary
+                    gasGiant.rings = hasRings
+                    # Put gas giant into orbit list
+                    orbitalList[mainOrbit-1] = gasGiant
+                # Moon of a rocky planet
+                else:
+                    # Create rocky planet
+                    rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
+                                                       moons      = moonList,
+                                                       rings      = hasRings)
+                    # Put rocky planet into orbit list
+                    orbitalList[mainOrbit-1] = rockyPlanet
+            # Space station around another body
+            elif ( isStation ):
+                # Create space station and attach world to it
+                spaceStation = orbitalobject.SpaceStation(world = mainWorld)
+                # Space station around a gas giant
+                if ( ofGas ):
+                    # Get gas giant to attach world as a space station to
+                    gasGiant = gasList.pop(0)
+                    # Add world as space station to giant
+                    gasGiant.stations.append(spaceStation)
+                    # Replace gas giant moon list
+                    gasGiant.moons = moonList
+                    # Add rings to gas giant if necessary
+                    gasGiant.rings = hasRings
+                    # Put gas giant into orbit list
+                    orbitalList[mainOrbit-1] = gasGiant
+                # Space station around a rocky planet
+                else:
+                    # Create rocky planet
+                    rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
+                                                       moons      = moonList,
+                                                       rings      = hasRings)
+                    # Add world as space station to giant
+                    rockyPlanet.stations.append(spaceStation)
+                    # Replace gas giant moon list
+                    rockyPlanet.moons = moonList
+                    # Add rings to gas giant if necessary
+                    rockyPlanet.rings = hasRings
+                    # Put gas giant into orbit list
+                    orbitalList[mainOrbit-1] = rockyPlanet
+            # Rocky world
+            else:
+                # Create rocky planet
+                rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
+                                                   moons      = moonList,
+                                                   rings      = hasRings,
+                                                   world      = mainWorld)
+                orbitalList[mainOrbit-1] = rockyPlanet
+            # Create inner and outer orbits
+            innerList = orbitalList[0:mainOrbit]
+            outerList = orbitalList[mainOrbit-1:]
+            print(len(innerList),len(outerList))
+            # Insert asteroid belts
+            # Insert gas giants
+            # Insert hot rock, cold stone, and ice planets to fill rest of orbits
+
+            # Put orbital list into system objects list
+            systemObj.objects = orbitalList
+
+            #orbitalList[mainOrbit-1] = mainWorld
+
+        #for systemKey in newSector.sortedSystems():
+        #    systemObj = newSector.systems[systemKey]
+        #    for o in systemObj.objects:
+        #        if ( o is not None ):
+        #            print(o.objectType + ', ',end='')
+        #    print('')
 
             # DEBUG
             #print('Rolls')
