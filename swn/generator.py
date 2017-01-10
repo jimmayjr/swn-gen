@@ -784,7 +784,42 @@ class Generator(object):
                     # Place planet
                     orbitalList[ooIndex] = rockyPlanet
             # Place remaining worlds that have airless/thin atmospheres
-
+            for oa in otherAirless:
+                # Planet index to try to place station/base world at
+                randomOrbitIndices = range(0,len(orbitalList))
+                np.random.shuffle(randomOrbitIndices)
+                for roi in randomOrbitIndices:
+                    # Avoid asteroid belts
+                    if ( not isinstance(orbitalList[roi],orbitalobject.AsteroidBelt) ):
+                        # We'll treat all airless/thin as airless at this point to 
+                        # offset how we changed the TL2- worlds to something with a 
+                        # thicker atmosphere
+                        # If 1 it can be a space station
+                        # If 2 it can be a moon base if the chosen planet has any moons
+                        # otherwise we'll revert to it being a space station
+                        isMoon    = False
+                        isStation = True
+                        if (random.diceRoll(1,2) == 2):
+                            if ( len(orbitalList[roi].moons) > 0 ):
+                                # If the randomly chosen moon has a world already, just
+                                # make this a station instead
+                                moonRoll = random.diceRoll(1,len(orbitalList[roi].moons))
+                                if ( orbitalList[roi].moons[moonRoll-1].world == None ):
+                                    isMoon    = True
+                                    isStation = False
+                                    moonIndex = moonRoll
+                        # Create moon world
+                        if ( isMoon ):
+                            orbitalList[roi].moons[moonIndex-1].world = oa
+                            break
+                        # Create space station and attach world to it
+                        if ( isStation ):
+                            spaceStation = orbitalobject.SpaceStation(worldObj = oa)
+                            oa.name += ' Station'
+                            break
+            # If for some reason a world didn't get put into an orbit, randomly
+            # insert it into the orbit list somewhere
+            # ===== TODO =====
             # Put orbital list into system objects list
             systemObj.objects = orbitalList
 
