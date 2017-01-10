@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 
 # Argument checker
-def ArgCheck(argName,argType):
-    if not (isinstance(argName,argType)):
-        raise exception.InvalidArgType(argName,argType)
+def ArgCheck(argName,argType,argDefault=None):
+    # If argType is None, set to default
+    if (argName is None):
+        return(argDefault)
+    # Else check argument type
+    elif (isinstance(argName,argType)):
+        return(argName)
+    # Else if wrong type, raise error
+    else:
+        raise InvalidArgType(argName,argType)
 
 # Exceptions -------------------------------------------------------------------
 class ExistingDictKey(Exception):

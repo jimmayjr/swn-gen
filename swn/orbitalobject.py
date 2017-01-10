@@ -2,6 +2,9 @@
 
 import abc
 
+import exception
+import world
+
 # Tables -----------------------------------------------------------------------
 # One Roll Star System
 # Moon size
@@ -101,51 +104,52 @@ class BaseOrbitalObject(object):
     __metaclass__ = abc.ABCMeta
     @abc.abstractmethod
     def __init__(self,
-                 objectType = TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
-                 world      = None):
-        self.objectType = objectType
-        self.world = world
+                 objectType = None,
+                 worldObj   = None):
+        # Check arguments
+        self.objectType = exception.ArgCheck(objectType,str)
+        self.world      = exception.ArgCheck(worldObj,world.World,None)
 
 # Asteroid belt class ----------------------------------------------------------
-class AstroidBelt(BaseOrbitalObject):
+class AsteroidBelt(BaseOrbitalObject):
     def __init__(self,
-                 objectType = TABLE_ORBITAL_OBJECT_TYPE['ROCKY_ASTEROID_BELT']):
+                 objectType = None):
         # Initialize base class
         BaseOrbitalObject.__init__(self,
-                                   objectType = objectType)
+                                   objectType = exception.ArgCheck(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['ROCKY_ASTEROID_BELT']))
 
 # Moon class -------------------------------------------------------------------
 class Moon(BaseOrbitalObject):
     def __init__(self,
-                 objectType = TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON'],
-                 world = None):
+                 objectType = None,
+                 worldObj   = None):
         # Initialize base class
         BaseOrbitalObject.__init__(self,
-                                   objectType = objectType,
-                                   world      = world)
+                                   objectType = exception.ArgCheck(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']),
+                                   worldObj   = exception.ArgCheck(worldObj,world.World,None))
 
 # Planet class -----------------------------------------------------------------
 class Planet(BaseOrbitalObject):
     def __init__(self,
-                 objectType = TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
-                 stations   = list(),
-                 moons      = list(),
-                 rings      = False,
-                 world      = None):
+                 objectType = None,
+                 stations   = None,
+                 moons      = None,
+                 rings      = None,
+                 worldObj   = None):
+        # Check arguments
+        self.stations = exception.ArgCheck(stations, list,        list())
+        self.moons    = exception.ArgCheck(moons,    list,        list())
+        self.rings    = exception.ArgCheck(rings,    bool,        False)
         # Initialize base class
         BaseOrbitalObject.__init__(self,
-                                   objectType = objectType,
-                                   world      = world)
-        # Arguments
-        self.stations = stations
-        self.moons    = moons
-        self.rings    = rings
+                                   objectType = exception.ArgCheck(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['ROCKY']),
+                                   worldObj   = exception.ArgCheck(worldObj,world.World,None))
 
 # Space station class ----------------------------------------------------------
 class SpaceStation(BaseOrbitalObject):
     def __init__(self,
-                 world = None):
+                 worldObj = None):
         # Initialize base class
         BaseOrbitalObject.__init__(self,
                                    objectType = TABLE_ORBITAL_OBJECT_TYPE['SPACE_STATION'],
-                                   world = world)
+                                   worldObj   = exception.ArgCheck(worldObj,world.World,None))

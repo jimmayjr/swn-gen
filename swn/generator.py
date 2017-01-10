@@ -76,6 +76,17 @@ class Generator(object):
     def save(self,fName):
         pass
 
+    def Moons(self,d20):
+        numSmallMoons  = orbitalobject.TABLE_SMALL_MOONS[d20]
+        numMediumMoons = orbitalobject.TABLE_MEDIUM_MOONS[d20]
+        moonList  = [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']) for sm in xrange(numSmallMoons)]
+        moonList += [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['MEDIUM_MOON']) for mm in xrange(numMediumMoons)]
+        np.random.shuffle(moonList)
+        return(moonList)
+
+    def Rings(self,d20):
+        return(orbitalobject.TABLE_MINOR_RINGS[d20])
+
     def sector(self,
                groupingMethod = GROUPING_METHOD):
         # Generate random sector name
@@ -435,34 +446,22 @@ class Generator(object):
                 spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10Mod]
                 # Add star
                 systemObj.stars.append(star.Star(color,colorText,spectralSubclass))
-            # Asteroid belts (ORSS)
-            numHydrocarbonBelts = system.TABLE_HYDROCARBON_ASTEROID_BELTS[d8]
-            numIcyBelts         = system.TABLE_ICY_ASTEROID_BELTS[d8]
-            numMetallicBelts    = system.TABLE_METALLIC_ASTEROID_BELTS[d8]
-            numRockyBelts       = system.TABLE_ROCKY_ASTEROID_BELTS[d8]
             # Gas giants (ORSS)
             numSmallGas = system.TABLE_GAS_GIANT_SMALL[d10]
             numLargeGas = system.TABLE_GAS_GIANT_LARGE[d10]
             # Create list of gas giants
             gasList  = [orbitalobject.Planet(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_GAS']) for sg in xrange(numSmallGas)]
             gasList += [orbitalobject.Planet(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['LARGE_GAS']) for lg in xrange(numLargeGas)]
+            # Shuffle gas giants into random order
             np.random.shuffle(gasList)
             # Add moons and rings to gas giants. Will replace with main world moons and rings if necessary.
             for gl in gasList:
                 # Roll a d20 to determine the number of moons and rings for the giant
                 gasD20 = random.diceRoll(1,20)
-                # Number of each type of moon
-                numGasSmallMoons  = orbitalobject.TABLE_SMALL_MOONS[gasD20]
-                numGasMediumMoons = orbitalobject.TABLE_MEDIUM_MOONS[gasD20]
                 # Does the giant have rings
-                gl.rings = orbitalobject.TABLE_MINOR_RINGS[gasD20]
-                # Create the moons
-                gasMoonList  = [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']) for sm in xrange(numGasSmallMoons)]
-                gasMoonList += [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['MEDIUM_MOON']) for mm in xrange(numGasMediumMoons)]
-                # Shuffle moons into random order
-                np.random.shuffle(gasMoonList)
+                gl.rings = self.Rings(gasD20)
                 # Add moons to the gas giant
-                gl.moons = gasMoonList
+                gl.moons = self.Moons(gasD20)
             # Total number of objects (ORSS)
             numObjects = d4 + d8 - 1
             # Place objects in orbits
@@ -476,44 +475,45 @@ class Generator(object):
                 for o in xrange(mainOrbit-len(orbitalList)):
                     orbitalList.append(None)
             # Fill main world orbit
-            numMainSmallMoons  = orbitalobject.TABLE_SMALL_MOONS[d20]
-            numMainMediumMoons = orbitalobject.TABLE_MEDIUM_MOONS[d20]
-            moonList  = [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']) for sm in xrange(numMainSmallMoons)]
-            moonList += [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['MEDIUM_MOON']) for mm in xrange(numMainMediumMoons)]
-            np.random.shuffle(moonList)
+            moonList = self.Moons(d20)
             #    If airless or thin, determine which one
-            #    On a d2, 1 is airless, 2 is thin
-            #    Airless are going to be space stations or moon bases
-            #    Thin are going to be thin atmosphere rocky planets
-            if (random.diceRoll(1,2) == 1):
-                # If airless, world is a moon or space station
-                # If main world table rolls has moons, it is a moon, else it is a station
-                if ( numMainSmallMoons + numMainMediumMoons > 0 ):
-                    isMoon    = True
-                    isStation = False
-                    # If main world is a moon, is it a moon of a gas giant or rocky world
-                    # If the system has gas giants, it is a gas giant moon
-                    # Else it is a moon of a rocky planet (should be rare)
-                    if ( numSmallGas + numLargeGas > 0):
-                        ofGas = True
+            if ( mainWorld.atmosphere == world.TABLE_ATMOSPHERE[4] ):
+                #    On a d2, 1 is airless, 2 is thin
+                #    Airless are going to be space stations or moon bases
+                #    Thin are going to be thin atmosphere rocky planets
+                if (random.diceRoll(1,2) == 1):
+                    # If airless, world is a moon or space station
+                    # If main world table rolls has moons, it is a moon, else it is a station
+                    if ( len(moonList) > 0 ):
+                        isMoon    = True
+                        isStation = False
+                        # If main world is a moon, is it a moon of a gas giant or rocky world
+                        # If the system has gas giants, it is a gas giant moon
+                        # Else it is a moon of a rocky planet (should be rare)
+                        if ( numSmallGas + numLargeGas > 0):
+                            ofGas = True
+                        else:
+                            ofGas = False
                     else:
-                        ofGas = False
+                        isMoon    = False
+                        isStation = True
+                        # If the main world is a space station, is it a space station of a gas giant or rocky world
+                        # If the system has gas giants, it is a gas giant station
+                        # Else it is a station of a rocky planet (should be rare)
+                        if ( numSmallGas + numLargeGas > 0):
+                            ofGas = True
+                        else:
+                            ofGas = False
                 else:
+                    # Main world is just a thin atmosphere rocky planet
                     isMoon    = False
-                    isStation = True
-                    # If the main world is a space station, is it a space station of a gas giant or rocky world
-                    # If the system has gas giants, it is a gas giant station
-                    # Else it is a station of a rocky planet (should be rare)
-                    if ( numSmallGas + numLargeGas > 0):
-                        ofGas = True
-                    else:
-                        ofGas = False
+                    isStation = False
+                    ofGas     = False
             else:
-                # Main world is just a thin atmosphere rocky planet
-                isMoon    = False
-                isStation = False
-                ofGas     = False
-            #    Does it have rings
+                isMoon        = False
+                isStation     = False
+                ofGas         = False
+            # Does it have rings
             hasRings = orbitalobject.TABLE_MINOR_RINGS[d20]
             # Insert main world
             # Moon of another body
@@ -541,7 +541,7 @@ class Generator(object):
             # Space station around another body
             elif ( isStation ):
                 # Create space station and attach world to it
-                spaceStation = orbitalobject.SpaceStation(world = mainWorld)
+                spaceStation = orbitalobject.SpaceStation(worldObj = mainWorld)
                 # Space station around a gas giant
                 if ( ofGas ):
                     # Get gas giant to attach world as a space station to
@@ -560,11 +560,11 @@ class Generator(object):
                     rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
                                                        moons      = moonList,
                                                        rings      = hasRings)
-                    # Add world as space station to giant
+                    # Add world as space station to rocky planet
                     rockyPlanet.stations.append(spaceStation)
-                    # Replace gas giant moon list
+                    # Replace rocky planet moon list
                     rockyPlanet.moons = moonList
-                    # Add rings to gas giant if necessary
+                    # Add rings to rocky planet if necessary
                     rockyPlanet.rings = hasRings
                     # Put gas giant into orbit list
                     orbitalList[mainOrbit-1] = rockyPlanet
@@ -574,53 +574,179 @@ class Generator(object):
                 rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
                                                    moons      = moonList,
                                                    rings      = hasRings,
-                                                   world      = mainWorld)
+                                                   worldObj   = mainWorld)
                 orbitalList[mainOrbit-1] = rockyPlanet
-            # Create inner and outer orbits
-            innerList = orbitalList[0:mainOrbit]
-            outerList = orbitalList[mainOrbit-1:]
-            print(len(innerList),len(outerList))
-            # Insert asteroid belts
-            # Insert gas giants
-            # Insert hot rock, cold stone, and ice planets to fill rest of orbits
+            # Asteroid belts (ORSS)
+            innerBelts = list()
+            for b in xrange(system.TABLE_HYDROCARBON_INNER_ASTEROID_BELTS[d8]):
+                innerBelts.append(orbitalobject.AsteroidBelt(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['HYDROCARBON_ASTEROID_BELT']))
+            for b in xrange(system.TABLE_ICY_INNER_ASTEROID_BELTS[d8]):
+                innerBelts.append(orbitalobject.AsteroidBelt(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ICY_ASTEROID_BELT']))
+            for b in xrange(system.TABLE_METALLIC_INNER_ASTEROID_BELTS[d8]):
+                innerBelts.append(orbitalobject.AsteroidBelt(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['METALLIC_ASTEROID_BELT']))
+            for b in xrange(system.TABLE_ROCKY_INNER_ASTEROID_BELTS[d8]):
+                innerBelts.append(orbitalobject.AsteroidBelt(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY_ASTEROID_BELT']))
+            outerBelts = list()
+            for b in xrange(system.TABLE_HYDROCARBON_OUTER_ASTEROID_BELTS[d8]):
+                outerBelts.append(orbitalobject.AsteroidBelt(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['HYDROCARBON_ASTEROID_BELT']))
+            for b in xrange(system.TABLE_ICY_OUTER_ASTEROID_BELTS[d8]):
+                outerBelts.append(orbitalobject.AsteroidBelt(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ICY_ASTEROID_BELT']))
+            for b in xrange(system.TABLE_METALLIC_OUTER_ASTEROID_BELTS[d8]):
+                outerBelts.append(orbitalobject.AsteroidBelt(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['METALLIC_ASTEROID_BELT']))
+            for b in xrange(system.TABLE_ROCKY_OUTER_ASTEROID_BELTS[d8]):
+                outerBelts.append(orbitalobject.AsteroidBelt(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY_ASTEROID_BELT']))
+            # Insert inner asteroid belts (ORSS)
+            for ib in innerBelts:
+                # Create inner and outer orbits indices
+                innerMin = 0
+                innerMax = mainOrbit
+                outerMin = mainOrbit+1
+                outerMax = len(orbitalList)
+                # Try to place in the middle of the inner orbits.
+                placed = False
+                # If that is full go closer to the main world orbit.
+                # If that is full try the beginning of the inner orbits.
+                # If that is full place in the first open spot in the outer orbits.
+                searchOrder = range(innerMax/2,innerMax) + range(innerMin,innerMax/2) + range(outerMin,outerMax)
+                for orbitIndex in searchOrder:
+                    # Look for a None slot in the orbitalList to fill
+                    if ( orbitalList[orbitIndex] == None ):
+                        # Replace None slot with inner belt
+                        orbitalList[orbitIndex] = ib
+                        placed = True
+                        # Stop searching
+                        break
+                # If there were no slots open, append belt to end of system
+                if ( not placed ):
+                    orbitalList.append(ib)
+            # Insert outer asteroid belts (ORSS)
+            for ob in outerBelts:
+                # Create outer orbits indices
+                outerMin = mainOrbit+1
+                outerMax = len(orbitalList)
+                # Try to place in the middle of the outer orbits.
+                placed = False
+                # If that is full go towards the outer orbits
+                # If that is full try the beginning of the outer orbits
+                searchOrder = range(outerMax/2,outerMax) + range(outerMin,outerMax/2)
+                for orbitIndex in searchOrder:
+                    # Look for a None slot in the orbitalList to fill
+                    if ( orbitalList[orbitIndex] == None ):
+                        # Replace None slot with inner belt
+                        orbitalList[orbitIndex] = ob
+                        placed = True
+                        # Stop searching
+                        break
+                # If there were no slots open, append belt to end of system
+                if ( not placed ):
+                    orbitalList.append(ob)
+            # Create list of worlds still to be placed
+            otherAirless = list()
+            otherWorlds = list()
+            for w in systemObj.worlds:
+                # We have already placed the main world
+                if ( w is not mainWorld ):
+                    # Save airless worlds for later
+                    if ( w.atmosphere == world.TABLE_ATMOSPHERE[4] ):
+                        otherAirless.append(w)
+                    else:
+                        # Add world to list
+                        otherWorlds.append(w)
+            ## Place remaining worlds that don't have airless/thin atomspheres
+            print(otherWorlds)
+            for ow in otherWorlds:
+                # d20 roll for planet stats
+                d20 = random.diceRoll(1,20)
+                # Create moons
+                moonList = self.Moons(d20)
+                # Create rings
+                hasRings = self.Rings(d20)
+                # Create rocky planet
+                rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
+                                                   moons      = moonList,
+                                                   rings      = hasRings,
+                                                   worldObj   = ow)
+                # Planet has not been placed yet
+                placed = False
+                # If burning start from 1/6 from the innermost orbit
+                if ( ow.temperature == world.TABLE_TEMPERATURE[12] ):
+                    searchIndex = len(orbitalList)/6
+                # If warm start 1/4 from the innermost orbit
+                elif ( ow.temperature == world.TABLE_TEMPERATURE[10] ):
+                    searchIndex = len(orbitalList)/4
+                # If temperate-to-warm start 1/3 from the innermost orbit
+                elif ( ow.temperature == world.TABLE_TEMPERATURE[11] ):
+                    searchIndex = len(orbitalList)/3
+                # If temperate try to put near the middle orbit
+                elif ( ow.temperature == world.TABLE_TEMPERATURE[7] ):
+                    searchIndex = len(orbitalList)/2
+                # If cold to temperate start 2/3 from the innermost orbit
+                elif ( ow.temperature == world.TABLE_TEMPERATURE[3] ):
+                    searchIndex = 2*len(orbitalList)/3
+                # If cold start from 3/4 from the innermost orbit
+                elif ( ow.temperature == world.TABLE_TEMPERATURE[4] ):
+                    searchIndex = 3*len(orbitalList)/4
+                # If frozen start from 5/6 from the innermost orbit
+                elif ( ow.temperature == world.TABLE_TEMPERATURE[2] ):
+                    searchIndex = 5*len(orbitalList)/6
+                else:
+                    print(ow.temperature)
+                # Go outward both directions from starting index
+                innerSplit = range(0,searchIndex)[::-1]
+                outerSplit = range(searchIndex,len(orbitalList))
+                # Create search list from the split lists
+                searchList = list()
+                for index in xrange(max(len(innerSplit),len(outerSplit))):
+                    if ( index < len(innerSplit) ):
+                        searchList.append(innerSplit[index])
+                    if ( index < len(outerSplit) ):
+                        searchList.append(outerSplit[index])
+                # Search orbitalList
+                for orbitIndex in searchList:
+                    # Look for a None slot in the orbital to fill
+                    if ( orbitalList[orbitIndex] == None ):
+                        # Place rocky planet
+                        orbitalList[orbitIndex] = rockyPlanet
+                        placed = True
+                        # Stop searching
+                        break
+                # If no open orbit slots, append to end
+                if ( not placed ):
+                    orbitalList.append(rockyPlanet)
+                
+
+            # Insert gas giants evenly into inner and outer orbits (ORSS)
+            # Insert hot rock, cold stone, and ice planets to fill rest of orbits (ORSS)
+            # Place remaining worlds that have airless/thin atmospheres
 
             # Put orbital list into system objects list
             systemObj.objects = orbitalList
 
-            #orbitalList[mainOrbit-1] = mainWorld
+        # DEBUG
 
-        #for systemKey in newSector.sortedSystems():
-        #    systemObj = newSector.systems[systemKey]
-        #    for o in systemObj.objects:
-        #        if ( o is not None ):
-        #            print(o.objectType + ', ',end='')
-        #    print('')
+        #for sKey in newSector.sortedSystems():
+        #    s = newSector.systems[sKey]
+        #    print([w.name for w in s.worlds])
+        for sKey in newSector.systems:
+            print(newSector.systems[sKey].name)
+            for o in newSector.systems[sKey].objects:
+                if ( o is not None ):
+                    print('    '+o.objectType)
+                    if ( o.world is not None ):
+                        print('       +'+o.world.name)
+                    if ( type(o) is not orbitalobject.AsteroidBelt ):
+                        for s in o.stations:
+                            print('       -'+s.objectType)
+                            if ( s.world is not None ):
+                                print('           +'+s.world.name)
+                        for m in o.moons:
+                            print('        '+m.objectType)
+                            if ( m.world is not None ):
+                                print('           +'+m.world.name)
+                else:
+                    print('    []')
 
-            # DEBUG
-            #print('Rolls')
-            #ollString  =  '{:>2},'.format(d4)
-            #rollString += ' {:>2},'.format(d6)
-            #rollString += ' {:>2},'.format(d8)
-            #rollString += ' {:>2},'.format(d10)
-            #rollString += ' {:>2},'.format(d12)
-            #rollString += ' {:>2}'.format(d20)
-            #print(rollString)
-            #print('Modified Rolls')
-            #modRollString  =  '{:>2},'.format(d4Mod)
-            #modRollString += ' {:>2},'.format('')
-            #modRollString += ' {:>2},'.format('')
-            #modRollString += ' {:>2},'.format('')
-            #modRollString += ' {:>2},'.format('')
-            #modRollString += ' {:>2}'.format('')
-            #print(modRollString)
-            #print(numStars)
-            #for (tcKey,tcText) in star.TABLE_COLOR_TEXT.iteritems():
-            #    print('{0:>2d}: {1}'.format(tcKey,tcText))
-            #for systemKey in newSector.sortedSystems():
-            #    if (len(newSector.systems[systemKey].stars)>0):
-            #        print(systemKey)
-            #        for sta in newSector.systems[systemKey].stars:
-            #            print(sta.color,sta.spectralSubclass)
+        # END DEBUG
 
         # Add corporations -----------------------------------------------------
         for i in xrange(MAX_CORPORATIONS):
