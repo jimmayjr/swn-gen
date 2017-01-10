@@ -513,6 +513,16 @@ class Generator(object):
                 isMoon        = False
                 isStation     = False
                 ofGas         = False
+            # If we just chose a space station for TL2 or lower, turn it into a
+            # planet instead. There is no way a TL2- civilization could survive
+            # on a space station. They'll likely live in the rememants of an
+            # underground bunker or maybe a biodome or something.
+            if ( (mainWorld.techLevel == world.TABLE_TECH_LEVEL[2]) or
+                 (mainWorld.techLevel == world.TABLE_TECH_LEVEL[3]) or
+                 (mainWorld.techLevel == world.TABLE_TECH_LEVEL[4]) ):
+                isMoon        = False
+                isStation     = False
+                ofGas         = False
             # Does it have rings
             hasRings = orbitalobject.TABLE_MINOR_RINGS[d20]
             # Insert main world
@@ -542,14 +552,15 @@ class Generator(object):
             elif ( isStation ):
                 # Create space station and attach world to it
                 spaceStation = orbitalobject.SpaceStation(worldObj = mainWorld)
+                mainWorld.name += ' Station'
                 # Space station around a gas giant
                 if ( ofGas ):
                     # Get gas giant to attach world as a space station to
                     gasGiant = gasList.pop(0)
                     # Add world as space station to giant
                     gasGiant.stations.append(spaceStation)
-                    # Replace gas giant moon list
-                    gasGiant.moons = moonList
+                    # Add main world moons to  gas giant moon list
+                    gasGiant.moons += moonList
                     # Add rings to gas giant if necessary
                     gasGiant.rings = hasRings
                     # Put gas giant into orbit list
@@ -648,12 +659,18 @@ class Generator(object):
                 if ( w is not mainWorld ):
                     # Save airless worlds for later
                     if ( w.atmosphere == world.TABLE_ATMOSPHERE[4] ):
-                        otherAirless.append(w)
+                        # If TL2-, put in other worlds, else put in airless
+                        if ( (w.techLevel == world.TABLE_TECH_LEVEL[2]) or
+                             (w.techLevel == world.TABLE_TECH_LEVEL[3]) or
+                             (w.techLevel == world.TABLE_TECH_LEVEL[4]) ):
+                            otherWorlds.append(w)
+                        else:
+                            # Space stations are cool
+                            otherAirless.append(w)
                     else:
                         # Add world to list
                         otherWorlds.append(w)
             ## Place remaining worlds that don't have airless/thin atomspheres
-            print(otherWorlds)
             for ow in otherWorlds:
                 # d20 roll for planet stats
                 d20 = random.diceRoll(1,20)
@@ -689,8 +706,6 @@ class Generator(object):
                 # If frozen start from 5/6 from the innermost orbit
                 elif ( ow.temperature == world.TABLE_TEMPERATURE[2] ):
                     searchIndex = 5*len(orbitalList)/6
-                else:
-                    print(ow.temperature)
                 # Go outward both directions from starting index
                 innerSplit = range(0,searchIndex)[::-1]
                 outerSplit = range(searchIndex,len(orbitalList))
@@ -713,10 +728,61 @@ class Generator(object):
                 # If no open orbit slots, append to end
                 if ( not placed ):
                     orbitalList.append(rockyPlanet)
-                
-
             # Insert gas giants evenly into inner and outer orbits (ORSS)
+            for gl in gasList:
+                placed = False
+                # Get list of indicies of orbits
+                orbitIndices = range(len(orbitalList))
+                # Shuffle list of indices
+                np.random.shuffle(orbitIndices)
+                # Search shuffled index list
+                for orbitIndex in orbitIndices:
+                    # Look for a None slot in the orbital to fill
+                    if ( orbitalList[orbitIndex] == None ):
+                        # Place rocky planet
+                        orbitalList[orbitIndex] = gl
+                        placed = True
+                        # Stop searching
+                        break
+                # If no open orbit slots, append to end
+                if ( not placed ):
+                    orbitalList.append(gl)
             # Insert hot rock, cold stone, and ice planets to fill rest of orbits (ORSS)
+            innerOrbits = range(0,mainOrbit)
+            for ioIndex in innerOrbits:
+                if ( orbitalList[ioIndex] == None ):
+                    # d20 roll for planet stats
+                    d20 = random.diceRoll(1,20)
+                    # Create moons
+                    moonList = self.Moons(d20)
+                    # Create rings
+                    hasRings = self.Rings(d20)
+                    # Create hot planet
+                    rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['HOT_ROCK'],
+                                                       moons      = moonList,
+                                                       rings      = hasRings)
+                    # Place planet
+                    orbitalList[ioIndex] = rockyPlanet
+            outerOrbits = range(mainOrbit,len(orbitalList))
+            for ooIndex in outerOrbits:
+                if ( orbitalList[ooIndex] == None ):
+                    # d20 roll for planet stats
+                    d20 = random.diceRoll(1,20)
+                    # Create moons
+                    moonList = self.Moons(d20)
+                    # Create rings
+                    hasRings = self.Rings(d20)
+                    # Create cold planet
+                    # On a d2, 1 is a cold stone planet and 2 is an ice planet
+                    if (random.diceRoll(1,2) == 1):
+                        objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['COLD_STONE']
+                    else:
+                        objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ICE']
+                    rockyPlanet = orbitalobject.Planet(objectType = objectType,
+                                                       moons      = moonList,
+                                                       rings      = hasRings)
+                    # Place planet
+                    orbitalList[ooIndex] = rockyPlanet
             # Place remaining worlds that have airless/thin atmospheres
 
             # Put orbital list into system objects list
