@@ -41,66 +41,29 @@ class Sector(object):
         return(not self.systems.has_key((sRow,sCol)))
 
     def printCorporations(self):
-        # Caclulate lengths
-        #    Known lengths
-        indexLen = len('Index')
-        #    Lengths to check each religions for
-        corporationLen = len('Corporation')
-        businessLen = len('Business')
+        # Create table
+        table = text.Table(self.name + ' - ' + 'Sector Corporations')
+        # Add headings
+        table.AddHeading('Index')
+        table.AddHeading('Corporation')
+        table.AddHeading('Business')
+        # Add rows
+        cIndex = 1
         for c in self.corporations:
-            # Corporation length
-            cName = c.name + ' ' + c.organization
-            if ( len(cName) > corporationLen ):
-                corporationLen = len(cName)
-            # Business length
-            if ( len(c.business) > businessLen ):
-                businessLen = len(c.business)
-        # Set lengths
-        lineBegin    = '# '
-        lineEnd      = ' #'
-        lineBeginLen = len(lineBegin)
-        lineEndLen   = len(lineEnd)
-        sep          = ' | '
-        sepLen       = len(sep)
-        # Sum lengths
-        lineLength  = lineBeginLen + indexLen + sepLen + corporationLen + sepLen
-        lineLength += businessLen + lineEndLen
-        # Print top border
-        border = ''
-        for i in xrange(lineLength):
-            border += '#'
-        print(border)
-        # Print sector name
-        sectorLine = border
-        sectorText = ' ' + self.name + ' - ' + 'Sector Corporations' + ' '
-        sectorLine = sectorLine[:1] + sectorText + sectorLine [(1+len(sectorText)):]
-        print(sectorLine)
-        print(border)
-        # Print headings
-        line = lineBegin
-        line += 'Index'.ljust(indexLen)
-        line += sep
-        line += 'Corporation'.ljust(corporationLen)
-        line += sep
-        line += 'Business'.ljust(businessLen)
-        line += lineEnd
-        print(line)
-        print(lineBegin + '-'*(lineLength-lineBeginLen-lineEndLen) + lineEnd)
-        # Print corporation info
-        cIndex = 0
-        for c in self.corporations:
-            line  = lineBegin
-            line += str(cIndex).rjust(2).ljust(indexLen)
-            line += sep
-            cName = c.name + ' ' + c.organization
-            line += cName.ljust(corporationLen)
-            line += sep
-            line += c.business.ljust(businessLen)
-            line += lineEnd
-            print(line)
+            # Initialize row list
+            row = list()
+            # Append index
+            row.append(str(cIndex).rjust(2))
+            # Append name
+            row.append(c.name + ' ' + c.organization)
+            # Append business type
+            row.append(c.business)
+            # Append row
+            table.AddRow(row)
+            # Update corporation index
             cIndex += 1
-        # Print bottom border
-        print(border)
+        # Print table
+        table.Print()
 
     def printReligions(self):
         # Caclulate lengths
@@ -228,7 +191,6 @@ class Sector(object):
                 table.AddRow(row)
                 # Update world index
                 wIndex += 1
-            
         # Print table
         table.Print()
 
