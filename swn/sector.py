@@ -186,7 +186,7 @@ class Sector(object):
         table.AddHeading('Temperature')
         table.AddHeading('TL')
         # Add rows
-        sIndex = 1
+        wIndex = 1
         for systemKey in self.SortedSystems():
             system = self.systems[systemKey]
             # Keep track of first world in system so we only print the index,
@@ -194,18 +194,16 @@ class Sector(object):
             firstWorld = True
             for w in system.SortedWorlds():
                 row = list()
-                # Print index, hex, and system name for first world in system
+                # Index
+                row.append(str(wIndex).rjust(2))
+                # Print hex and system name for first world in system
                 if ( firstWorld ):
                     firstWorld = False
-                    # Index
-                    row.append(str(sIndex).rjust(2))
                     # Hex
                     row.append('0{0}0{1}'.format(systemKey[0],systemKey[1]))
                     # System name
                     row.append(system.name)
                 else:
-                    # Index
-                    row.append('')
                     # Hex
                     row.append('')
                     # System name
@@ -228,8 +226,9 @@ class Sector(object):
                 row.append(w.techLevel)
                 # Append row
                 table.AddRow(row)
-            # Update system index
-            sIndex += 1
+                # Update world index
+                wIndex += 1
+            
         # Print table
         table.Print()
 
