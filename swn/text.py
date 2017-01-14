@@ -60,19 +60,52 @@ class Table(object):
         colWidth = dict()
         # Start with base value being the width of the headings
         for h in self.headings:
-            colWidth[h] = len(h)
+            colWidth[h] = len(h)+2
         # Look at each row and compare the width of each column to the current max
         for r in self.rows:
             for cIndex in xrange(len(r)):
                 # Get heading for this row
                 h = self.headings[cIndex]
                 # Use max of this column length vs the current max
-                colWidth[h] = max(len(str(r[cIndex])),colWidth[h])
+                colWidth[h] = max(len(str(r[cIndex]))+2,colWidth[h])
         # Calculate table width
-        #    Sum of column max widths + space pad on each side of columns + border on each side
-        tableWidth = sum(colWidth.values()) + 2*len(self.headings) + 2
+        #    Sum of column max widths + # of column separators + border on each side
+        tableWidth = sum(colWidth.values()) + len(self.headings)-1 + 2
         # Print title if it has one
         if ( len(self.title) > 0 ):
             print(self.border*tableWidth)
-            print(self.border + ' ' + self.title + ' '*(len(tableWidth)-len(self.title)+1) + self.border)
+            print(self.border + ' ' + self.title + ' '*(tableWidth-len(self.title)-3) + self.border)
             print(self.border*tableWidth)
+        # Print headings
+        line = self.border
+        for hIndex in xrange(len(self.headings)-1):
+            line += (' ' + self.headings[hIndex] + ' ').ljust(colWidth[self.headings[hIndex]]) + self.colSep
+        line += (' ' + self.headings[hIndex+1]).ljust(colWidth[self.headings[hIndex+1]]) + self.border
+        print(line)
+        # Print heading separator
+        print(self.border + self.rowSep*(tableWidth-2) + self.border)
+        # Print rows
+        for r in self.rows:
+            line = self.border
+            for cIndex in xrange(len(r)-1):
+                colText = (' ' + r[cIndex] + ' ')
+                if ( self.justify[cIndex] == JUSTIFY_RIGHT ):
+                    line += colText.rjust(colWidth[self.headings[cIndex]])
+                elif ( self.justify[cIndex] == JUSTIFY_CENTER ):
+                    line += colText.cjust(colWidth[self.headings[cIndex]])
+                else:
+                    line += colText.ljust(colWidth[self.headings[cIndex]])
+                line += self.colSep
+            # Last column doesn't have separator
+            colText = (' ' + r[cIndex+1] + ' ')
+            if ( self.justify[cIndex+1] == JUSTIFY_RIGHT ):
+                line += colText.rjust(colWidth[self.headings[cIndex+1]])
+            elif ( self.justify[cIndex+1] == JUSTIFY_CENTER ):
+                line += colText.cjust(colWidth[self.headings[cIndex+1]])
+            else:
+                line += colText.ljust(colWidth[self.headings[cIndex+1]])
+            line += self.border
+            print(line)
+
+        # Print end
+        print(self.border*tableWidth)

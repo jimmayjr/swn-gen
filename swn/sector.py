@@ -10,6 +10,7 @@ import exception
 import generator
 import hexutils
 import system
+import text
 
 MAX_ROWS = 10
 MAX_COLS = 8
@@ -169,171 +170,68 @@ class Sector(object):
         # Print bottom border
         print(border)
 
-    def printSectorInfo(self):
-        # Calculate lengths
-        #    Known lengths
-        indexLen = 6
-        hexLen = 5
-        tlLen = 2
-        #    Lengths check each world for
-        systemLen = 0
-        worldLen = 0
-        atmosphereLen = 0
-        biosphereLen = 0
-        populationLen = 0
-        populationAltLen = 0
-        tagsLen = 0
-        temperatureLen = 0
-        # Check all systems
-        for systemKey in self.sortedSystems():
-            # System name length
-            if ( len(self.systems[systemKey].name) > systemLen ):
-                systemLen =  len(self.systems[systemKey].name)
-            # Check all worlds
-            for w in self.systems[systemKey].worlds:
-                # World name length
-                if ( len(w.name) > worldLen ):
-                    worldLen =  len(w.name)
-                # Atmosphere length
-                if ( len(w.atmosphere) > atmosphereLen ):
-                    atmosphereLen = len(w.atmosphere)
-                # Biosphere length
-                if ( len(w.biosphere) > biosphereLen ):
-                    biosphereLen = len(w.biosphere)
-                # Population length
-                if ( len(w.population) > populationLen ):
-                    populationLen = len(w.population)
-                # Population alternate length
-                popAltStrCommas = ''
-                popAltStr = str(w.populationAlt)
-                while ( len(popAltStr) > 0 ):
-                    if ( len(popAltStr) < 4 ):
-                        popAltStrCommas = popAltStr + popAltStrCommas
-                        popAltStr = ''
-                    else:
-                        popAltStrCommas =  ',' + popAltStr[-3:] + popAltStrCommas
-                        popAltStr = popAltStr[:-3]
-                if ( len(popAltStrCommas) > populationAltLen ):
-                    populationAltLen = len(popAltStrCommas)
-                # Tags length
-                if ( len(str(w.tags[0] + ', ' + w.tags[1])) > tagsLen ):
-                    tagsLen = len(str(w.tags[0] + ', ' + w.tags[1]) )
-                # Temperature length
-                if ( len(w.temperature) > temperatureLen ):
-                    temperatureLen = len(w.temperature)
-        # Set lengths
-        lineBegin    = '# '
-        lineEnd      = ' #'
-        lineBeginLen = len(lineBegin)
-        lineEndLen   = len(lineEnd)
-        sep          = ' | '
-        sepLen       = len(sep)
-        # Sum lengths
-        lineLength  = lineBeginLen + indexLen + sepLen + hexLen + sepLen
-        lineLength += systemLen + sepLen + worldLen + sepLen + atmosphereLen
-        lineLength += sepLen + biosphereLen + sepLen + populationLen + sepLen
-        lineLength += populationAltLen + sepLen + tagsLen + sepLen
-        lineLength += temperatureLen + sepLen + tlLen + lineEndLen
-        # Print border
-        border = ''
-        for i in xrange(lineLength):
-            border += '#'
-        print(border)
-        # Print sector name
-        sectorLine = border
-        sectorText = ' ' + self.name + ' - ' + 'Sector Info' + ' '
-        sectorLine = sectorLine[:1] + sectorText + sectorLine [(1+len(sectorText)):]
-        print(sectorLine)
-        print(border)
-        # Print headings
-        line = lineBegin
-        line += 'Index'.ljust(indexLen)
-        line += sep
-        line += 'Hex'.ljust(hexLen)
-        line += sep
-        line += 'System'.ljust(systemLen)
-        line += sep
-        line += 'World'.ljust(worldLen)
-        line += sep
-        line += 'Atmosphere'.ljust(atmosphereLen)
-        line += sep
-        line += 'Biosphere'.ljust(biosphereLen)
-        line += sep
-        line += 'Population'.ljust(populationLen)
-        line += sep
-        line += 'Pop. Alt.'.ljust(populationAltLen)
-        line += sep
-        line += 'Tags'.ljust(tagsLen)
-        line += sep
-        line += 'Temperature'.ljust(temperatureLen)
-        line += sep
-        line += 'TL'.ljust(tlLen)
-        line += lineEnd
-        print(line)
-        print(lineBegin + '-'*(lineLength-lineBeginLen-lineEndLen) + lineEnd)
-        # Create lines
-        sIndex = 0
-        for systemKey in self.sortedSystems():
-            wIndex = 0
-            indexText = [''] * len(self.systems[systemKey].worlds)
-            indexText[0] = str(sIndex)
-            systemHexText = [''] * len(self.systems[systemKey].worlds)
-            systemHexText[0] = '0{0}0{1}'.format(systemKey[0],systemKey[1])
-            systemNameText = [''] * len(self.systems[systemKey].worlds)
-            systemNameText[0] = self.systems[systemKey].name
-            for w in self.systems[systemKey].worlds:
-                line = lineBegin
-                line += indexText[wIndex].rjust(2).ljust(indexLen)
-                line += sep
-                line += systemHexText[wIndex].ljust(hexLen)
-                line += sep
-                line += systemNameText[wIndex].ljust(systemLen)
-                line += sep
-                line += w.name.ljust(worldLen)
-                line += sep
-                line += w.atmosphere.ljust(atmosphereLen)
-                line += sep
-                line += w.biosphere.ljust(biosphereLen)
-                line += sep
-                line += w.population.ljust(populationLen)
-                line += sep
-                popAltStrCommas = ''
-                popAltStr = str(w.populationAlt)
-                # All digits
-                #while ( len(popAltStr) > 0 ):
-                #    if ( len(popAltStr) < 4 ):
-                #        popAltStrCommas = popAltStr + popAltStrCommas
-                #        popAltStr = ''
-                #    else:
-                #        # All digits
-                #        popAltStrCommas = ',' + popAltStr[-3:] + popAltStrCommas
-                #        popAltStr = popAltStr[:-3]
-                # Three significant figures
-                popAltStrRev = popAltStr[::-1]
-                cCount = 0
-                while ( len(popAltStrRev) > 0 ):
-                    if ( len(popAltStrRev) > 3 ):
-                        popAltStrCommas = str(0) + popAltStrCommas
-                    else: 
-                        popAltStrCommas = popAltStrRev[0]+ popAltStrCommas
-                    popAltStrRev = popAltStrRev[1:]
-                    cCount += 1
-                    if ( (cCount == 3) and (len(popAltStrRev) > 0) ): 
-                        popAltStrCommas = ',' + popAltStrCommas
-                        cCount = 0
-                line += popAltStrCommas.rjust(populationAltLen)
-                line += sep
-                line += str(w.tags[0] + ', ' + w.tags[1]).ljust(tagsLen)
-                line += sep
-                line += w.temperature.ljust(temperatureLen)
-                line += sep
-                line += w.techLevel.ljust(tlLen)
-                line += lineEnd
-                # Print line
-                print(line)
-                wIndex += 1
+    def PrintSectorInfo(self):
+        # Create table
+        table = text.Table(self.name + ' - ' + 'Sector Info')
+        # Add headings
+        table.AddHeading('Index')
+        table.AddHeading('Hex')
+        table.AddHeading('System')
+        table.AddHeading('World')
+        table.AddHeading('Atmosphere')
+        table.AddHeading('Biosphere')
+        table.AddHeading('Population')
+        table.AddHeading('Pop. Alt.','R')
+        table.AddHeading('Tags')
+        table.AddHeading('Temperature')
+        table.AddHeading('TL')
+        # Add rows
+        sIndex = 1
+        for systemKey in self.SortedSystems():
+            system = self.systems[systemKey]
+            # Keep track of first world in system so we only print the index,
+            # hex, and system name for the first entry
+            firstWorld = True
+            for w in system.SortedWorlds():
+                row = list()
+                # Print index, hex, and system name for first world in system
+                if ( firstWorld ):
+                    firstWorld = False
+                    # Index
+                    row.append(str(sIndex).rjust(2))
+                    # Hex
+                    row.append('0{0}0{1}'.format(systemKey[0],systemKey[1]))
+                    # System name
+                    row.append(system.name)
+                else:
+                    # Index
+                    row.append('')
+                    # Hex
+                    row.append('')
+                    # System name
+                    row.append('')
+                # World name
+                row.append(w.name)
+                # Atmosphere
+                row.append(w.atmosphere)
+                # Biosphere
+                row.append(w.biosphere)
+                # Population
+                row.append(w.population)
+                # Population alt.
+                row.append(w.PopulationAltText())
+                # Tags
+                row.append(w.tags[0] + ', ' + w.tags[1])
+                # Temperature
+                row.append(w.temperature)
+                # TL
+                row.append(w.techLevel)
+                # Append row
+                table.AddRow(row)
+            # Update system index
             sIndex += 1
-        print(border)
+        # Print table
+        table.Print()
 
     def printSectorMap(self,
                        coords = True,
@@ -393,7 +291,7 @@ class Sector(object):
         # Add star systems------------------------------------------------------
         if (stars):
             # Sort star systems by hex, col first, row second
-            starKeys = self.sortedSystems()
+            starKeys = self.SortedSystems()
             for starKeyIndex in range(len(starKeys)):
                 # Get row and column
                 (row,col) = starKeys[starKeyIndex]
@@ -439,11 +337,11 @@ class Sector(object):
         print(line)
         print(border)
 
-    def sortedSystems(self):
+    def SortedSystems(self):
         return(sorted(self.systems.iterkeys(),key=lambda e: (e[1], e[0])))
 
     def systemDistances(self):
-        systems = self.sortedSystems()
+        systems = self.SortedSystems()
         systemDistancesCalc = [ [0] * len(systems) for i in xrange(len(systems)) ]
         # For each system
         for sAIndex in xrange(0,len(systems)):
@@ -454,7 +352,7 @@ class Sector(object):
         return(systemDistancesCalc)
 
     def systemDistancesTest(self):
-        systems = self.sortedSystems()
+        systems = self.SortedSystems()
         # Distance sum list
         sumDistAll = list()
         sumDistAllPos = list()
@@ -520,7 +418,7 @@ class Sector(object):
 
     def systemGroups(self):
         # Sort star systems by hex, col first, row second
-        starKeys = self.sortedSystems()
+        starKeys = self.SortedSystems()
         # List for placing groups
         groups = list()
         # Add stars to groups by recursively searching nearby stars

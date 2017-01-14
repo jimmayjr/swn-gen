@@ -229,3 +229,20 @@ class World(object):
 
         # Alternate roll information
         self.populationAlt = exception.ArgCheck(populationAlt,int,0)
+
+    def PopulationAltText(self):
+        # Floor to 3 significant figures
+        if ( self.populationAlt > 99999 ):
+            return('{:,}'.format(int(str(self.populationAlt)[0:3]+'0'*(len(str(self.populationAlt))-3))))
+        # Floor to nearest 1000
+        elif ( self.populationAlt > 9999 ):
+            return('{:,}'.format(int(str(self.populationAlt)[0:2]+'0'*(len(str(self.populationAlt))-2))))
+        # Floor to nearest 100
+        elif ( self.populationAlt > 999 ):
+            return('{:,}'.format(int(str(self.populationAlt)[0:2]+'0'*(len(str(self.populationAlt))-2))))
+        # Floor to nearest 10
+        elif ( self.populationAlt > 99 ):
+            return(str(self.populationAlt)[0:1]+'0'*(len(str(self.populationAlt))-1))
+        # Else just return value
+        else:
+            return(str(self.populationAlt))

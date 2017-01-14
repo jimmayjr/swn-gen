@@ -184,3 +184,6 @@ class System(object):
             if not (isinstance(o,orbitalobject.BaseObject)):
                 raise exception.InvalidListItemType(o,orbitalobject.BaseObject)
         self.worlds  = exception.ArgCheck(worlds,list,list())
+
+    def SortedWorlds(self):
+        return(sorted(self.worlds, key=lambda w: w.name))

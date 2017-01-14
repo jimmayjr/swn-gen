@@ -332,7 +332,7 @@ class Generator(object):
 
         # Add worlds -----------------------------------------------------------
         worldCount = 0
-        for systemKey in newSector.sortedSystems():
+        for systemKey in newSector.SortedSystems():
             systemObj = newSector.systems[systemKey]
             # If world count has reached max, limit number of new worlds to one
             #    per system
@@ -389,7 +389,7 @@ class Generator(object):
 
         # Fill system data -----------------------------------------------------
         # Use one roll star system (ORSS) rules
-        for systemKey in newSector.sortedSystems():
+        for systemKey in newSector.SortedSystems():
             # Get current system
             systemObj = newSector.systems[systemKey]
             # Rolls (ORSS)
