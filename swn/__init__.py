@@ -9,6 +9,7 @@ __all__ = ['corporation',
            'sector',
            'star',
            'system',
+           'text',
            'world']
 import corporation
 import exception
@@ -21,4 +22,5 @@ import religion
 import sector
 import star
 import system
+import text
 import world
