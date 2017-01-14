@@ -5,6 +5,18 @@ import orbitalobject
 
 # Tables -----------------------------------------------------------------------
 # SWN tables
+TABLE_ALT_ATMOSPHERE = {
+    2:  'Corrosive',
+    3:  'Breathable',
+    4:  'Breathable',
+    5:  'Breathable',
+    6:  'Breathable',
+    7:  'Breathable',
+    8:  'Thick',
+    9:  'Invasive, toxic',
+    10: 'Corrosive and invasive'
+}
+
 TABLE_ATMOSPHERE = {
     2:  'Corrosive',
     3:  'Inert gas',
@@ -201,42 +213,19 @@ class World(object):
                  tags = ['',''],
                  temperature = '',
                  techLevel = '0'):
-        # Check arguments
-        #   name
-        if not (isinstance(name,str)):
-            raise exception.InvalidArgType(name,str)
-        #   atmosphere
-        if not (isinstance(atmosphere,str)):
-            raise exception.InvalidArgType(atmosphere,str)
-        #   biosphere
-        if not (isinstance(biosphere,str)):
-            raise exception.InvalidArgType(biosphere,str)
-        #   population
-        if not (isinstance(population,str)):
-            raise exception.InvalidArgType(population,str)
-        #   tags
-        if not (isinstance(tags,list)):
-            raise exception.InvalidArgType(tags,list)
+        # General information
+        self.name = exception.ArgCheck(name,str,'')
+
+        # Roll information
+        self.atmosphere  = exception.ArgCheck(atmosphere,str,'')
+        self.biosphere   = exception.ArgCheck(biosphere,str,'')
+        self.population  = exception.ArgCheck(population,str,'')
+        self.tags        = exception.ArgCheck(tags,list,['',''])
         for tag in tags:
             if not (isinstance(tag,str)):
                 raise exception.InvalidListItemType(tag,str)
-        #   temperature
-        if not (isinstance(temperature,str)):
-            raise exception.InvalidArgType(temperature,str)
-        #   techLevel
-        if not (isinstance(techLevel,str)):
-            raise exception.InvalidArgType(techLevel,str)
-
-        # General information
-        self.name = name
-
-        # Roll information
-        self.atmosphere  = atmosphere
-        self.biosphere   = biosphere
-        self.population  = population
-        self.tags        = tags
-        self.temperature = temperature
-        self.techLevel   = techLevel
+        self.temperature = exception.ArgCheck(temperature,str,'')
+        self.techLevel   = exception.ArgCheck(techLevel,str,'0')
 
         # Alternate roll information
-        self.populationAlt = populationAlt
+        self.populationAlt = exception.ArgCheck(populationAlt,int,0)

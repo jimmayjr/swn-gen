@@ -172,33 +172,15 @@ TABLE_STARS = {
 # Star system class ------------------------------------------------------------
 class System(object):
     def __init__(self,
-                 name = '',
-                 stars = list(),
-                 objects = list(),
-                 worlds = list()):
+                 name    = None,
+                 stars   = None,
+                 objects = None,
+                 worlds  = None):
         # Check arguments
-        #   name
-        if not (isinstance(name,str)):
-            raise exception.InvalidArgType(name,str)
-        #   stars
-        if not (isinstance(stars,list)):
-            raise exception.InvalidArgType(stars,list)
-        for s in stars:
-            if not (isinstance(s,Star)):
-                raise exception.InvalidListItemType(s,star.Star)
-        #   orbital objects
-        if not (isinstance(objects,list)):
-            raise exception.InvalidArgType(objects,list)
+        self.name    = exception.ArgCheck(name,str,'')
+        self.stars   = exception.ArgCheck(stars,list,list())
+        self.objects = exception.ArgCheck(objects,list,list())
         for o in objects:
             if not (isinstance(o,orbitalobject.BaseObject)):
                 raise exception.InvalidListItemType(o,orbitalobject.BaseObject)
-        
-        # General information
-        self.name = name
-
-        # SWN rolled information
-        self.worlds = worlds
-
-        # System generator rolled information
-        self.objects = objects
-        self.stars = stars
+        self.worlds  = exception.ArgCheck(worlds,list,list())

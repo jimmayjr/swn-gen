@@ -515,14 +515,20 @@ class Generator(object):
                 ofGas         = False
             # If we just chose a space station for TL2 or lower, turn it into a
             # planet instead. There is no way a TL2- civilization could survive
-            # on a space station. They'll likely live in the rememants of an
-            # underground bunker or maybe a biodome or something.
+            # on a space station so we'll remove airless/thin and inert gas
+            # atmospheres as options. If a hostile atmoshere still exists, then
+            # They'll likely live in the rememants of an underground bunker or 
+            # maybe a biodome or something.
             if ( (mainWorld.techLevel == world.TABLE_TECH_LEVEL[2]) or
                  (mainWorld.techLevel == world.TABLE_TECH_LEVEL[3]) or
                  (mainWorld.techLevel == world.TABLE_TECH_LEVEL[4]) ):
+                # Planet flags
                 isMoon        = False
                 isStation     = False
                 ofGas         = False
+                # New atmosphere roll
+                roll2d5 = random.diceRoll(2,5)
+                mainWorld.atmosphere = world.TABLE_ALT_ATMOSPHERE[roll2d5]
             # Does it have rings
             hasRings = orbitalobject.TABLE_MINOR_RINGS[d20]
             # Insert main world
@@ -819,35 +825,29 @@ class Generator(object):
                             break
             # If for some reason a world didn't get put into an orbit, randomly
             # insert it into the orbit list somewhere
-            # ===== TODO =====
+            # Get list of worlds in this orbit list
+            orbitWorldList = list()
+            for ol in orbitalList:
+                orbitWorldList += ol.Worlds()
+            # Compare orbit list worlds system worlds
+            for owl in orbitWorldList:
+                if ( owl not in systemObj.worlds ):
+                    # d20 roll for planet stats
+                    d20 = random.diceRoll(1,20)
+                    # Create moons
+                    moonList = self.Moons(d20)
+                    # Create rings
+                    hasRings = self.Rings(d20)
+                    # Create rocky planet
+                    rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
+                                                       moons      = moonList,
+                                                       rings      = hasRings,
+                                                       worldObj   = owl)
+                    # Randomly place world
+                    orbitInsert = random.diceRoll(1,len(orbitalList))-1
+                    orbitalList.insert(orbitInsert,rockyPlanet)
             # Put orbital list into system objects list
             systemObj.objects = orbitalList
-
-        # DEBUG
-
-        #for sKey in newSector.sortedSystems():
-        #    s = newSector.systems[sKey]
-        #    print([w.name for w in s.worlds])
-        for sKey in newSector.systems:
-            print(newSector.systems[sKey].name)
-            for o in newSector.systems[sKey].objects:
-                if ( o is not None ):
-                    print('    '+o.objectType)
-                    if ( o.world is not None ):
-                        print('       +'+o.world.name)
-                    if ( type(o) is not orbitalobject.AsteroidBelt ):
-                        for s in o.stations:
-                            print('       -'+s.objectType)
-                            if ( s.world is not None ):
-                                print('           +'+s.world.name)
-                        for m in o.moons:
-                            print('        '+m.objectType)
-                            if ( m.world is not None ):
-                                print('           +'+m.world.name)
-                else:
-                    print('    []')
-
-        # END DEBUG
 
         # Add corporations -----------------------------------------------------
         for i in xrange(MAX_CORPORATIONS):

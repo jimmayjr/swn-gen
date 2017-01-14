@@ -110,6 +110,12 @@ class BaseOrbitalObject(object):
         self.objectType = exception.ArgCheck(objectType,str)
         self.world      = exception.ArgCheck(worldObj,world.World,None)
 
+    def Worlds(self):
+        if ( self.world == None ):
+            return([])
+        else:
+            return([self.world])
+
 # Asteroid belt class ----------------------------------------------------------
 class AsteroidBelt(BaseOrbitalObject):
     def __init__(self,
@@ -144,6 +150,14 @@ class Planet(BaseOrbitalObject):
         BaseOrbitalObject.__init__(self,
                                    objectType = exception.ArgCheck(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['ROCKY']),
                                    worldObj   = exception.ArgCheck(worldObj,world.World,None))
+
+    def Worlds(self):
+        worlds  = BaseOrbitalObject.Worlds(self)
+        for s in self.stations:
+            worlds += s.Worlds()
+        for m in self.moons:
+            worlds += m.Worlds()
+        return(worlds)
 
 # Space station class ----------------------------------------------------------
 class SpaceStation(BaseOrbitalObject):

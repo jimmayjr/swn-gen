@@ -52,13 +52,13 @@ for i in xrange(1,11):
 # Star class -------------------------------------------------------------------
 class Star(object):
     def __init__(self,
-                 color='',
-                 colorText='',
-                 spectralSubclass=0):
+                 color            = None,
+                 colorText        = None,
+                 spectralSubclass = None):
         # Check arguments
-        exception.ArgCheck(color,str)
-        exception.ArgCheck(colorText,str)
-        exception.ArgCheck(spectralSubclass,int)
+        exception.ArgCheck(color,str,'')
+        exception.ArgCheck(colorText,str,'')
+        exception.ArgCheck(spectralSubclass,int,0)
 
         # Star information
         self.color            = color

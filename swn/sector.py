@@ -18,12 +18,8 @@ MAX_COLS = 8
 class Sector(object):
     def __init__(self,
                  name):
-        # Check arguments
-        #   name
-        if not (isinstance(name,str)):
-            raise exception.InvalidClassArgType(self,'name',name,str)
         # General information
-        self.name = name
+        self.name = exception.ArgCheck(name,str,argDefault='Default Name')
         # Roll information
         self.corporations = list()
         self.heresies = list()
