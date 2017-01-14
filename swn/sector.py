@@ -66,72 +66,32 @@ class Sector(object):
         table.Print()
 
     def printReligions(self):
-        # Caclulate lengths
-        #    Known lengths
-        indexLen = len('Index')
-        #    Lengths to check each religions for
-        evolutionLen = len('Evolution')
-        leadershipLen = len('Leadership')
-        originLen = len('Origin Tradition')
+        # Create table
+        table = text.Table(self.name + ' - ' + 'Sector Religions')
+        # Add headings
+        table.AddHeading('Index')
+        table.AddHeading('Evolution')
+        table.AddHeading('Leadership')
+        table.AddHeading('Origin Tradition')
+        # Add rows
+        rIndex = 1
         for r in self.religions:
-            # Evolution length
-            if ( len(r.evolution) > evolutionLen ):
-                evolutionLen = len(r.evolution)
-            # Leadership length
-            if ( len(r.leadership) > leadershipLen ):
-                leadershipLen = len(r.leadership)
-            # Origin length
-            if ( len(r.origin) > originLen ):
-                originLen = len(r.origin)
-        # Set lengths
-        lineBegin    = '# '
-        lineEnd      = ' #'
-        lineBeginLen = len(lineBegin)
-        lineEndLen   = len(lineEnd)
-        sep          = ' | '
-        sepLen       = len(sep)
-        # Sum lengths
-        lineLength  = lineBeginLen + indexLen + sepLen + evolutionLen + sepLen
-        lineLength += leadershipLen + sepLen + originLen + lineEndLen
-        # Print top border
-        border = ''
-        for i in xrange(lineLength):
-            border += '#'
-        print(border)
-        # Print sector name
-        sectorLine = border
-        sectorText = ' ' + self.name + ' - ' + 'Sector Religions' + ' '
-        sectorLine = sectorLine[:1] + sectorText + sectorLine [(1+len(sectorText)):]
-        print(sectorLine)
-        print(border)
-        # Print headings
-        line = lineBegin
-        line += 'Index'.ljust(indexLen)
-        line += sep
-        line += 'Evolution'.ljust(evolutionLen)
-        line += sep
-        line += 'Leadership'.ljust(leadershipLen)
-        line += sep
-        line += 'Origin Tradition'.ljust(originLen)
-        line += lineEnd
-        print(line)
-        print(lineBegin + '-'*(lineLength-lineBeginLen-lineEndLen) + lineEnd)
-        # Print religion info
-        rIndex = 0
-        for r in self.religions:
-            line  = lineBegin
-            line += str(rIndex).rjust(2).ljust(indexLen)
-            line += sep
-            line += r.evolution.ljust(evolutionLen)
-            line += sep
-            line += r.leadership.ljust(leadershipLen)
-            line += sep
-            line += r.origin.ljust(originLen)
-            line += lineEnd
-            print(line)
+            # Initialize row
+            row = list()
+            # Append index
+            row.append(str(rIndex).rjust(2))
+            # Append evolution
+            row.append(r.evolution)
+            # Append leadership
+            row.append(r.leadership)
+            # Append origin
+            row.append(r.origin)
+            # Add row
+            table.AddRow(row)
+            # Update index
             rIndex += 1
-        # Print bottom border
-        print(border)
+        # Print table
+        table.Print()
 
     def PrintSectorInfo(self):
         # Create table
@@ -187,7 +147,7 @@ class Sector(object):
                 row.append(w.temperature)
                 # TL
                 row.append(w.techLevel)
-                # Append row
+                # Add row
                 table.AddRow(row)
                 # Update world index
                 wIndex += 1
