@@ -1,14 +1,180 @@
 #!/usr/bin/env python
 
-import exception
+import math
 
+import exception
+import hexutils
+import sector
+
+# Hexmap constants -------------------------------------------------------------
+# Map border
+MAP_BORDER = '#'
+
+# Map sizes
+LARGE_MAP = 'large'
+SMALL_MAP = 'small'
+
+# Plaintext hex representations
+#   HEIGHT AND WIDTH MUST BE ODD
+LARGE_ODDR_TEXT = [r'   _______    ',
+                   r'  /       \   ',
+                   r' /         \  ',
+                   r'/           \ ',
+                   r'\           / ',
+                   r' \         /  ',
+                   r'  \_______/   ']
+LARGE_ODDR_TEXT_W =     13    # Width
+LARGE_ODDR_TEXT_H =     7     # Height
+LARGE_ODDR_TEXT_COORD = (1,4) # Coordinate position, zero indexed
+LARGE_ODDR_TEXT_LABEL = (4,6) # Label position, zero indexed 
+
+SMALL_ODDR_TEXT = [r'  _____   ',
+                   r' /     \  ',
+                   r'/       \ ',
+                   r'\       / ',
+                   r' \_____/  ']
+SMALL_ODDR_TEXT_W =     9     # Width
+SMALL_ODDR_TEXT_H =     5     # Height
+SMALL_ODDR_TEXT_COORD = (1,2) # Coordinate position, zero indexed
+SMALL_ODDR_TEXT_LABEL = (3,4) # Label position, zero indexed 
+
+# Table constants --------------------------------------------------------------
+# Column justification
+JUSTIFY_CENTER = 'C'
+JUSTIFY_LEFT   = 'L'
+JUSTIFY_RIGHT  = 'R'
+# Separators and borders
 TABLE_BORDER  = '#'
 TABLE_COL_SEP = '|'
 TABLE_ROW_SEP = '-'
 
-JUSTIFY_CENTER = 'C'
-JUSTIFY_LEFT   = 'L'
-JUSTIFY_RIGHT  = 'R'
+class HexMap(object):
+    def __init__(self,
+                 title  = None,
+                 size   = None,
+                 rows   = None,
+                 cols   = None,
+                 coords = None,
+                 border = None):
+        # Argument parsing -----------------------------------------------------
+        # Map title
+        self.title = exception.ArgCheck(title,str,'')
+        # Map size
+        if ( not ( (size == LARGE_MAP ) or ( size == SMALL_MAP ) ) ):
+            # TODO: raise error of invalid map size argument
+            size = SMALL_MAP
+        self.size  = exception.ArgCheck(size,str,SMALL_MAP)
+        # Hex text info
+        if ( self.size == LARGE_MAP ):
+            hexText        = LARGE_ODDR_TEXT
+            self.hexWidth  = LARGE_ODDR_TEXT_W
+            self.hexHeight = LARGE_ODDR_TEXT_H
+            hexCoord       = LARGE_ODDR_TEXT_COORD
+            self.hexLabel  = LARGE_ODDR_TEXT_LABEL
+        else:
+            hexText        = SMALL_ODDR_TEXT
+            self.hexWidth  = SMALL_ODDR_TEXT_W
+            self.hexHeight = SMALL_ODDR_TEXT_H
+            hexCoord       = SMALL_ODDR_TEXT_COORD
+            self.hexLabel  = SMALL_ODDR_TEXT_LABEL
+        # Map rows
+        self.rows = exception.ArgCheck(rows,int,sector.MAX_ROWS)
+        # Map columns
+        self.cols = exception.ArgCheck(cols,int,sector.MAX_COLS)
+        # Print map coordinates flag
+        coords = exception.ArgCheck(coords,bool,False)
+        # Map border
+        self.border = exception.ArgCheck(border,str,MAP_BORDER)
+        # Map padding
+        self.padding = 1
+
+        # Create empty grid from template --------------------------------------
+        # Calculate number of rows
+        charRows  = self.rows*self.hexHeight + int(math.ceil((self.hexHeight-1)/2.0))
+        # Subtract the rows where the grid overlaps
+        charRows -= (self.rows - 1)
+        # Calculate number of columns
+        #   Add full width of 0th column
+        charCols  = self.hexWidth
+        #   Every extra column is 3/4 of the width to the right 
+        charCols += (self.cols-1)*int(math.ceil(self.hexWidth*3.0/4.0))
+        # Fill hexmap
+        self.hexMap = [ ([' '] * charCols) for i in xrange(charRows) ]
+        # Array character row offset to start this hex from
+        cEvenColRowOffset = 0
+        cOddColRowOffset = (self.hexHeight-1)/2
+        # For every hex row
+        for row in xrange(self.rows):
+            # Array character column offset to start this hex from
+            cColOffset = 0
+            # For every hex col
+            for col in xrange(self.cols):
+                # Rows to copy from template
+                tRows = xrange(self.hexHeight)
+                # Cols to copy from template
+                tCols = xrange(self.hexWidth)
+                # Copy template
+                for tr in tRows:
+                    for tc in tCols:
+                        # Use different row offsets for even vs odd rows
+                        useOffset = cEvenColRowOffset
+                        if (col % 2 != 0):
+                            useOffset = cOddColRowOffset
+                        # Don't copy spaces
+                        if (hexText[tRows[tr]][tCols[tc]] != ' '):
+                            self.hexMap[useOffset+tr][cColOffset+tc] = hexText[tRows[tr]][tCols[tc]]
+                # Add hex coords
+                if (coords):
+                    coordStr = '0{0}0{1}'.format(row,col)
+                    coordROffset = hexCoord[0]
+                    coordCOffset = hexCoord[1]
+                    for i in xrange(len(coordStr)):
+                        self.hexMap[useOffset+coordROffset][cColOffset+coordCOffset+i] = coordStr[i]
+
+                # Update character column offset
+                cColOffset += int(math.ceil(self.hexWidth*3.0/4.0))
+            # Update character row offset
+            cEvenColRowOffset += self.hexHeight-1
+            cOddColRowOffset  += self.hexHeight-1
+
+    def AddLabel(self,
+                 label,
+                 row,
+                 col):
+        # Check arguments
+        exception.ArgCheck(label,str)
+        exception.ArgCheck(row,int)
+        exception.ArgCheck(col,int)
+        # Array character row offset to start this hex from
+        cRowOffset = row*(self.hexHeight-1)
+        # Offset more for odd columns
+        if (col % 2 != 0):
+            cRowOffset += (self.hexHeight-1)/2
+        # Array character column offset
+        cColOffset = col*int(math.ceil(self.hexWidth*3.0/4.0))
+        # Offset to center of hex
+        cRowOffset += self.hexLabel[0]
+        cColOffset += self.hexLabel[1]
+        # Print 
+        for i in xrange(len(label)):
+            self.hexMap[cRowOffset][cColOffset+i] = label[i]
+
+    def Print(self):
+        mapWidth  = len(self.hexMap[0])
+        border  = self.border*(mapWidth + self.padding*2 + 2)
+        padding = self.border + ' '*(self.padding*2 + mapWidth) + self.border
+        # Print top border
+        print(border)
+        # Print title
+        print(self.border + ' ' + self.title.ljust(mapWidth) + ' ' + self.border)
+        # Print title separator
+        print(border)
+        # Print map
+        for r in self.hexMap:
+            print(self.border + ' ' + ''.join(r) + ' ' + self.border)
+        # Print bottom border
+        print(padding)
+        print(border)
 
 class Table(object):
     def __init__(self,title=None,border=None,colSep=None,rowSep=None):
@@ -106,6 +272,5 @@ class Table(object):
                 line += colText.ljust(colWidth[self.headings[cIndex+1]])
             line += self.border
             print(line)
-
         # Print end
         print(self.border*tableWidth)

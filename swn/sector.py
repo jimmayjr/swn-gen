@@ -154,109 +154,24 @@ class Sector(object):
         # Print table
         table.Print()
 
-    def printSectorMap(self,
-                       coords = True,
-                       stars  = True):
-        # Create hexmap as empty list of lists of characters -------------------
-        #   Each row is a list
-        #   Each column is an entry in the row list
-        # Calculate number of rows
-        charRows  = MAX_ROWS*hexutils.ODDR_TEXT_H + int(math.ceil((hexutils.ODDR_TEXT_H-1)/2.0))
-        # Subtract the rows where the grid overlaps
-        charRows -= (MAX_ROWS - 1)
-        # Calculate number of columns
-        #   Add full width of 0th column
-        charCols  = hexutils.ODDR_TEXT_W
-        #   Every extra column is 3/4 of the width to the right 
-        charCols += (MAX_COLS-1)*int(math.ceil(hexutils.ODDR_TEXT_W*3.0/4.0))
-        # Subtract columns where the grid overlaps
-        # Fill hexmap
-        hexMap = [ ([' '] * charCols) for i in xrange(charRows) ]
-        # Add grid from template -----------------------------------------------
-        # Array character row offset to start this hex from
-        cEvenColRowOffset = 0
-        cOddColRowOffset = (hexutils.ODDR_TEXT_H-1)/2
-        # For every hex row
-        for row in xrange(MAX_ROWS):
-            # Array character column offset to start this hex from
-            cColOffset = 0
-            # For every hex col
-            for col in xrange(MAX_COLS):
-                # Rows to copy from template
-                tRows = xrange(hexutils.ODDR_TEXT_H)
-                # Cols to copy from template
-                tCols = xrange(hexutils.ODDR_TEXT_W)
-                # Copy template
-                for tr in xrange(len(tRows)):
-                    for tc in xrange(len(tCols)):
-                        # Use different row offsets for even vs odd rows
-                        useOffset = cEvenColRowOffset
-                        if (col % 2 != 0):
-                            useOffset = cOddColRowOffset
-                        # Don't copy spaces
-                        if (hexutils.ODDR_TEXT[tRows[tr]][tCols[tc]] != ' '):
-                            hexMap[useOffset+tr][cColOffset+tc] = hexutils.ODDR_TEXT[tRows[tr]][tCols[tc]]
-                # Add hex coords
-                if (coords):
-                    coordStr = '0{0}0{1}'.format(row,col)
-                    coordROffset = hexutils.ODDR_TEXT_COORD[0]
-                    coordCOffset = hexutils.ODDR_TEXT_COORD[1]
-                    for i in xrange(len(coordStr)):
-                        hexMap[useOffset+coordROffset][cColOffset+coordCOffset+i] = coordStr[i]
-
-                # Update character column offset
-                cColOffset += int(math.ceil(hexutils.ODDR_TEXT_W*3.0/4.0))
-            # Update character row offset
-            cEvenColRowOffset += hexutils.ODDR_TEXT_H-1
-            cOddColRowOffset  += hexutils.ODDR_TEXT_H-1
-        # Add star systems------------------------------------------------------
-        if (stars):
-            # Sort star systems by hex, col first, row second
-            starKeys = self.SortedSystems()
-            for starKeyIndex in range(len(starKeys)):
-                # Get row and column
-                (row,col) = starKeys[starKeyIndex]
-                # Array character row offset to start this hex from
-                cRowOffset = row*(hexutils.ODDR_TEXT_H-1)
-                # Offset more for odd columns
-                if (col % 2 != 0):
-                    cRowOffset += (hexutils.ODDR_TEXT_H-1)/2
-                # Array character column offset
-                cColOffset = col*int(math.ceil(hexutils.ODDR_TEXT_W*3.0/4.0))
-                # Offset to center of hex
-                cRowOffset += hexutils.ODDR_TEXT_LABEL[0]
-                cColOffset += hexutils.ODDR_TEXT_LABEL[1]
-                # Print 
-                starNum = str(starKeyIndex)
-                for i in xrange(len(starNum)):
-                    hexMap[cRowOffset][cColOffset+i] = starNum[i]
-
-        # Print characters to screen -------------------------------------------
-        # Print top border
-        border = ''
-        for i in xrange(len(hexMap[0])+4):
-            border += '#'
-        print(border)
-        # Print sector name
-        sectorLine = border
-        sectorText = ' ' + self.name + ' - ' + 'Sector Map' + ' '
-        sectorLine = sectorLine[:1] + sectorText + sectorLine [(1+len(sectorText)):]
-        print(sectorLine)
-        print(border)
-        # Print map
-        for rowList in hexMap:
-            line = '# '
-            for colChar in rowList:
-                line += colChar
-            line += ' #'
-            print(line)
-        # Print bottom border
-        line = '#'
-        for i in xrange(1,len(hexMap[0])+3):
-            line += ' '
-        line += '#'
-        print(line)
-        print(border)
+    def PrintSectorMap(self,
+                       coords = None):
+        # Process arguments
+        coords = exception.ArgCheck(coords,bool,False)
+        # Create hexmap
+        hexMap = text.HexMap(title  = self.name + ' - ' + 'Sector Map',
+                             size   = text.SMALL_MAP,
+                             rows   = MAX_ROWS,
+                             cols   = MAX_COLS,
+                             coords = coords)
+        # Add systems to map
+        sIndex = 1
+        for systemKey in self.SortedSystems():
+            (row,col) = systemKey
+            hexMap.AddLabel(str(sIndex),row,col)
+            sIndex += 1
+        # Print hexmap
+        hexMap.Print()
 
     def SortedSystems(self):
         return(sorted(self.systems.iterkeys(),key=lambda e: (e[1], e[0])))

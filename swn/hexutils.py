@@ -156,28 +156,3 @@ def cubeLInterp(aX,aY,aZ,bX,bY,bZ,t):
     y = aY + (bY - aY) * t
     z = aZ + (bZ - aZ) * t
     return(x,y,z)
-
-
-# Plaintext hex representations ------------------------------------------------
-#   HEIGHT AND WIDTH MUST BE ODD
-# ODDR_TEXT = [r'   _______    ',
-#              r'  /       \   ',
-#              r' /         \  ',
-#              r'/           \ ',
-#              r'\           / ',
-#              r' \         /  ',
-#              r'  \_______/   ']
-# ODDR_TEXT_W =     13    # Width
-# ODDR_TEXT_H =     7     # Height
-# ODDR_TEXT_COORD = (1,4) # Coordinate position, zero indexed
-# ODDR_TEXT_LABEL = (4,6) # Label position, zero indexed 
-
-ODDR_TEXT = [r'  _____   ',
-             r' /     \  ',
-             r'/       \ ',
-             r'\       / ',
-             r' \_____/  ']
-ODDR_TEXT_W =     9     # Width
-ODDR_TEXT_H =     5     # Height
-ODDR_TEXT_COORD = (1,2) # Coordinate position, zero indexed
-ODDR_TEXT_LABEL = (3,4) # Label position, zero indexed 
