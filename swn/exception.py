@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Argument checker
-def ArgCheck(arg,argType,argDefault=None):
+def arg_check(arg,argType,argDefault=None):
     # If argType is None, set to default
     if (arg is None):
         return(argDefault)

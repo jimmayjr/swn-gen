@@ -177,13 +177,13 @@ class System(object):
                  objects = None,
                  worlds  = None):
         # Check arguments
-        self.name    = exception.ArgCheck(name,str,'')
-        self.stars   = exception.ArgCheck(stars,list,list())
-        self.objects = exception.ArgCheck(objects,list,list())
+        self.name    = exception.arg_check(name,str,'')
+        self.stars   = exception.arg_check(stars,list,list())
+        self.objects = exception.arg_check(objects,list,list())
         for o in objects:
             if not (isinstance(o,orbitalobject.BaseObject)):
                 raise exception.InvalidListItemType(o,orbitalobject.BaseObject)
-        self.worlds  = exception.ArgCheck(worlds,list,list())
+        self.worlds  = exception.arg_check(worlds,list,list())
 
-    def SortedWorlds(self):
+    def sorted_worlds(self):
         return(sorted(self.worlds, key=lambda w: w.name))

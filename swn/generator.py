@@ -40,43 +40,19 @@ GROUPING_METHOD = 8
 # Generator class --------------------------------------------------------------
 class Generator(object):
     def __init__(self):
-        self.seed = random.randomSeed()
+        self.seed = random.random_seed()
 
     def corporation(self):
-        name         = corporation.TABLE_NAME[random.diceRoll(1,25)]
-        organization = corporation.TABLE_ORGANIZATION[random.diceRoll(1,25)]
-        business     = corporation.TABLE_BUSINESS[random.diceRoll(1,50)]
+        name         = corporation.TABLE_NAME[random.dice_roll(1,25)]
+        organization = corporation.TABLE_ORGANIZATION[random.dice_roll(1,25)]
+        business     = corporation.TABLE_BUSINESS[random.dice_roll(1,50)]
         newCorporation = corporation.Corporation(name,organization,business)
         return(newCorporation)
-
-    def nameSector(self):
-        sectorName  = np.random.choice(name.sectorFirstNameList) + ' '
-        sectorName += np.random.choice(name.sectorSecondNameList)
-        sectorName += np.random.choice(['',' I',' II',' III',' IV',' V',' VI',' VII',' VIII',' IX',' X'])
-        return(sectorName)
-
-    def nameSystem(self):
-        systemName = np.random.choice(name.starNameList)
-        return(systemName)
-
-    def nameWorld(self):
-        worldName = np.random.choice(name.worldNameList)
-        return(worldName)
-
-    def religion(self):
-        evolution   = religion.TABLE_EVOLUTION[random.diceRoll(1,8)]
-        leadership  = religion.TABLE_LEADERSHIP[random.diceRoll(1,6)]
-        origin      = religion.TABLE_ORIGIN_TRADITION[random.diceRoll(1,12)]
-        newReligion = religion.Religion(evolution,leadership,origin)
-        return(newReligion)
 
     def load(self):
         pass
 
-    def save(self,fName):
-        pass
-
-    def Moons(self,d20):
+    def moons(self,d20):
         numSmallMoons  = orbitalobject.TABLE_SMALL_MOONS[d20]
         numMediumMoons = orbitalobject.TABLE_MEDIUM_MOONS[d20]
         moonList  = [orbitalobject.Moon(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']) for sm in xrange(numSmallMoons)]
@@ -84,17 +60,41 @@ class Generator(object):
         np.random.shuffle(moonList)
         return(moonList)
 
-    def Rings(self,d20):
+    def name_sector(self):
+        sectorName  = np.random.choice(name.sectorFirstNameList) + ' '
+        sectorName += np.random.choice(name.sectorSecondNameList)
+        sectorName += np.random.choice(['',' I',' II',' III',' IV',' V',' VI',' VII',' VIII',' IX',' X'])
+        return(sectorName)
+
+    def name_system(self):
+        systemName = np.random.choice(name.starNameList)
+        return(systemName)
+
+    def name_world(self):
+        worldName = np.random.choice(name.worldNameList)
+        return(worldName)
+
+    def religion(self):
+        evolution   = religion.TABLE_EVOLUTION[random.dice_roll(1,8)]
+        leadership  = religion.TABLE_LEADERSHIP[random.dice_roll(1,6)]
+        origin      = religion.TABLE_ORIGIN_TRADITION[random.dice_roll(1,12)]
+        newReligion = religion.Religion(evolution,leadership,origin)
+        return(newReligion)    
+
+    def rings(self,d20):
         return(orbitalobject.TABLE_MINOR_RINGS[d20])
+
+    def save(self,fName):
+        pass
 
     def sector(self,
                groupingMethod = GROUPING_METHOD):
         # Generate random sector name
-        newsectorName = self.nameSector()
+        newsectorName = self.name_sector()
         # Create new sector object
         newSector = sector.Sector(newsectorName)
         # Generate number of stars
-        numStars = random.diceRoll(1,10,20)
+        numStars = random.dice_roll(1,10,20)
         # Create list of names used
         usedNames = dict()
         # Generate first 20 star system positions ------------------------------
@@ -103,23 +103,23 @@ class Generator(object):
         while (sCount < 20):
             # Generate row and column
             #   Subtract 1 to start numbers at 0
-            row = random.diceRoll(1,10)-1
-            col = random.diceRoll(1,8)-1
+            row = random.dice_roll(1,10)-1
+            col = random.dice_roll(1,8)-1
             # Check for empy hex
-            if (newSector.hexEmpty(row,col)):
+            if (newSector.hex_empty(row,col)):
                 # Hex is empty, create new star system
                 # TODO: Generate random star system name
                 #   TODO: Check all other system names for duplicates
                 nameLoopCount = 0
                 nameCheck = False
                 while (not nameCheck):
-                    newSystemName = self.nameSystem()
+                    newSystemName = self.name_system()
                     if ( not usedNames.has_key(newSystemName) ):
                         nameCheck = True
                     nameLoopCount += 1
                     if (nameLoopCount>100):
                         raise exception.MaxLoopIterationsExceed(MAX_LOOP_ITER)
-                newSector.addBlankSystem(newSystemName,row,col)
+                newSector.add_blank_system(newSystemName,row,col)
                 sCount += 1
             else:
                 # Hex is occupied, do nothing
@@ -137,9 +137,9 @@ class Generator(object):
             loopCount = 0
             if (groupingMethod == 0):
                 while ( True ):
-                    newRow = random.diceRoll(1,10)-1
-                    newCol = random.diceRoll(1,8)-1
-                    if ( newSector.hexEmpty(newRow,newCol) ):
+                    newRow = random.dice_roll(1,10)-1
+                    newCol = random.dice_roll(1,8)-1
+                    if ( newSector.hex_empty(newRow,newCol) ):
                         break
                     loopCount += 1
                     if (loopCount>100):
@@ -147,50 +147,50 @@ class Generator(object):
             # 1: Minimize the sum of distances between all systems
             elif (groupingMethod == 1):
                 # Sum system distances for all new possible positions
-                (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                 (newRow,newCol) = sumDistAllPos[sumDistAll.index(min(sumDistAll))]
             # 2: Maximize the sum of distances between all systems
             elif (groupingMethod == 2):
                 # Sum system distances for all new possible positions
-                (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                 (newRow,newCol) = sumDistAllPos[sumDistAll.index(max(sumDistAll))]
             # 3: 1/4 between min and max of the sum of distances between all 
             #    systems
             elif (groupingMethod == 3):
                 # Sum system distances for all new possible positions
-                (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                 sumDistJoined = zip(sumDistAll,sumDistAllPos)
                 (newRow,newCol) = sorted(sumDistJoined)[len(sumDistJoined)/4][1]
             # 4: 1/3 between min and max of the sum of distances between all 
             #    systems
             elif (groupingMethod == 4):
                 # Sum system distances for all new possible positions
-                (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                 sumDistJoined = zip(sumDistAll,sumDistAllPos)
                 (newRow,newCol) = sorted(sumDistJoined)[len(sumDistJoined)/3][1]
             # 5: 1/2 between min and max of the sum of distances between all 
             #    systems
             elif (groupingMethod == 5):
                 # Sum system distances for all new possible positions
-                (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                 sumDistJoined = zip(sumDistAll,sumDistAllPos)
                 (newRow,newCol) = sorted(sumDistJoined)[len(sumDistJoined)/2][1]
             # 6: Link groups of stars together by joining the groups with the
             #    furthest nearest neighbors first
             elif (groupingMethod == 6):
                 # Get groups of systems
-                systemGroups = newSector.systemGroups()
+                systemGroups = newSector.system_groups()
                 # If only one large group, do something to add variety
                 if ( len(systemGroups) == 1 ):
                     # Sum system distances for all new possible positions
-                    (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                    (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                     # Choose new position that maximizes sum of distances
                     (newRow,newCol) = sumDistAllPos[sumDistAll.index(max(sumDistAll))]
                 else:
                     # Calculate distance between groups
                     # Calculate systems in the groups whose distance define the
                     # group distance
-                    (groupDistances,minDistGroupSystems) = newSector.systemGroupDistances()
+                    (groupDistances,minDistGroupSystems) = newSector.system_group_distances()
                     # Distance of each group to nearest group
                     minDist      = [0] * len(groupDistances)
                     # Index of nearest group to each group
@@ -205,7 +205,7 @@ class Generator(object):
                     # Stars that define the distance between the groups
                     ((aRow,aCol),(bRow,bCol)) = minDistGroupSystems[maxDistAIndex][maxDistBIndex]
                     # Try places stars in the middle of a line between the groups
-                    line = hexutils.oddQLine(aRow,aCol,bRow,bCol)
+                    line = hexutils.odd_q_line(aRow,aCol,bRow,bCol)
                     (newRow,newCol) = line[len(line)/2]
                     # Check for lines that fall outside the grid
                     if ( (newRow == sector.MAX_ROWS) or 
@@ -213,7 +213,7 @@ class Generator(object):
                          (newCol == sector.MAX_COLS) or 
                          (newCol < 0 )):
                         # Sum system distances for all new possible positions
-                        (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                        (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                         # Choose new position that maximizes sum of distances
                         (newRow,newCol) = sumDistAllPos[sumDistAll.index(min(sumDistAll))]
 
@@ -221,9 +221,9 @@ class Generator(object):
             #    linking to their nearest
             elif (groupingMethod == 7):
                 # Get groups of systems
-                systemGroups = newSector.systemGroups()
+                systemGroups = newSector.system_groups()
                 # Shuffle groups to not favor any specific row or column
-                systemGroupsShuffled = newSector.systemGroups()
+                systemGroupsShuffled = newSector.system_groups()
                 np.random.shuffle(systemGroupsShuffled)
                 # Sort systemGroups by number of stars in group
                 sortedMinNumberGroups = sorted(systemGroupsShuffled,key=lambda g: len(g))
@@ -234,7 +234,7 @@ class Generator(object):
                 # If only one large group, do something to add variety
                 if ( len(systemGroups) == 1 ):
                     # Sum system distances for all new possible positions
-                    (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                    (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                     # Choose new position that maximizes sum of distances
                     (newRow,newCol) = sumDistAllPos[sumDistAll.index(max(sumDistAll))]
                 else:
@@ -243,7 +243,7 @@ class Generator(object):
                     # group distance
                     # Note this order not based off of the shuffled, sorted 
                     # list above
-                    (groupDistances,minDistGroupSystems) = newSector.systemGroupDistances()
+                    (groupDistances,minDistGroupSystems) = newSector.system_group_distances()
                     # Distance of smallest group to nearest group
                     minDist      = min(groupDistances[smallestGroupIndex][:smallestGroupIndex]+groupDistances[smallestGroupIndex][smallestGroupIndex+1:])
                     # Indices of min distance systems of nearest group to 
@@ -252,7 +252,7 @@ class Generator(object):
                     # Stars that define the distance between the groups
                     ((aRow,aCol),(bRow,bCol)) = minDistGroupSystems[smallestGroupIndex][minDistIndex]
                     # Try places stars in the middle of a line between the groups
-                    line = hexutils.oddQLine(aRow,aCol,bRow,bCol)
+                    line = hexutils.odd_q_line(aRow,aCol,bRow,bCol)
                     (newRow,newCol) = line[len(line)/2]
                     # Check for lines that fall outside the grid
                     if ( (newRow == sector.MAX_ROWS) or 
@@ -260,16 +260,16 @@ class Generator(object):
                          (newCol == sector.MAX_COLS) or 
                          (newCol < 0 )):
                         # Sum system distances for all new possible positions
-                        (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                        (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                         # Choose new position that maximizes sum of distances
                         (newRow,newCol) = sumDistAllPos[sumDistAll.index(min(sumDistAll))]
             # 8: Link groups of stars together, starting with the largest, 
             #    linking to their nearest
             elif (groupingMethod == 8):
                 # Get groups of systems
-                systemGroups = newSector.systemGroups()
+                systemGroups = newSector.system_groups()
                 # Shuffle groups to not favor any specific row or column
-                systemGroupsShuffled = newSector.systemGroups()
+                systemGroupsShuffled = newSector.system_groups()
                 np.random.shuffle(systemGroupsShuffled)
                 # Sort systemGroups by number of stars in group
                 sortedMinNumberGroups = sorted(systemGroupsShuffled,key=lambda g: len(g))
@@ -280,7 +280,7 @@ class Generator(object):
                 # If only one large group, do something to add variety
                 if ( len(systemGroups) == 1 ):
                     # Sum system distances for all new possible positions
-                    (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                    (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                     # Choose new position that maximizes sum of distances
                     (newRow,newCol) = sumDistAllPos[sumDistAll.index(max(sumDistAll))]
                 else:
@@ -289,7 +289,7 @@ class Generator(object):
                     # group distance
                     # Note this order not based off of the shuffled, sorted 
                     # list above
-                    (groupDistances,minDistGroupSystems) = newSector.systemGroupDistances()
+                    (groupDistances,minDistGroupSystems) = newSector.system_group_distances()
                     # Distance of largest group to nearest group
                     minDist      = min(groupDistances[largestGroupIndex][:largestGroupIndex]+groupDistances[largestGroupIndex][largestGroupIndex+1:])
                     # Indices of min distance systems of nearest group to 
@@ -298,7 +298,7 @@ class Generator(object):
                     # Stars that define the distance between the groups
                     ((aRow,aCol),(bRow,bCol)) = minDistGroupSystems[largestGroupIndex][minDistIndex]
                     # Try places stars in the middle of a line between the groups
-                    line = hexutils.oddQLine(aRow,aCol,bRow,bCol)
+                    line = hexutils.odd_q_line(aRow,aCol,bRow,bCol)
                     (newRow,newCol) = line[len(line)/2]
                     # Check for lines that fall outside the grid
                     if ( (newRow == sector.MAX_ROWS) or 
@@ -306,7 +306,7 @@ class Generator(object):
                          (newCol == sector.MAX_COLS) or 
                          (newCol < 0 )):
                         # Sum system distances for all new possible positions
-                        (sumDistAll,sumDistAllPos) = newSector.systemDistancesTest()
+                        (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
                         # Choose new position that maximizes sum of distances
                         (newRow,newCol) = sumDistAllPos[sumDistAll.index(min(sumDistAll))]
             else:
@@ -316,13 +316,13 @@ class Generator(object):
             nameLoopCount = 0
             nameCheck = False
             while (not nameCheck):
-                newSystemName = self.nameSystem()
+                newSystemName = self.name_system()
                 if ( not usedNames.has_key(newSystemName) ):
                     nameCheck = True
                 nameLoopCount += 1
                 if (nameLoopCount>100):
                     raise exception.MaxLoopIterationsExceed(MAX_LOOP_ITER)
-            newSector.addBlankSystem(newSystemName,newRow,newCol)
+            newSector.add_blank_system(newSystemName,newRow,newCol)
             # Update count of created systems
             sCount += 1
             # Catch runaway loop
@@ -332,12 +332,12 @@ class Generator(object):
 
         # Add worlds -----------------------------------------------------------
         worldCount = 0
-        for systemKey in newSector.SortedSystems():
+        for systemKey in newSector.sorted_systems():
             systemObj = newSector.systems[systemKey]
             # If world count has reached max, limit number of new worlds to one
             #    per system
             if ( worldCount < MAX_WORLDS):
-                numWorlds = system.TABLE_WORLDS[random.diceRoll(1,10)]
+                numWorlds = system.TABLE_WORLDS[random.dice_roll(1,10)]
                 worldCount += numWorlds
             else:
                 numWorlds = 1
@@ -347,36 +347,36 @@ class Generator(object):
                 nameLoopCount = 0
                 nameCheck = False
                 while (not nameCheck):
-                    newWorldName = self.nameWorld()
+                    newWorldName = self.name_world()
                     if ( not usedNames.has_key(newSystemName) ):
                         nameCheck = True
                     nameLoopCount += 1
                     if (nameLoopCount>100):
                         raise exception.MaxLoopIterationsExceed(MAX_LOOP_ITER)
                 # Roll tags
-                atmosphere    = world.TABLE_ATMOSPHERE[random.diceRoll(2,6)]
-                biosphere     = world.TABLE_BIOSPHERE[random.diceRoll(2,6)]
-                pop2d6        = random.diceRoll(2,6)
+                atmosphere    = world.TABLE_ATMOSPHERE[random.dice_roll(2,6)]
+                biosphere     = world.TABLE_BIOSPHERE[random.dice_roll(2,6)]
+                pop2d6        = random.dice_roll(2,6)
                 population    = world.TABLE_POPULATION[pop2d6]
                 populationAlt = np.random.randint(world.TABLE_POPULATION_ALT[pop2d6][0],
                                                   world.TABLE_POPULATION_ALT[pop2d6][1]+1)
-                t1d6          = random.diceRoll(1,6)
-                t1d10         = random.diceRoll(1,10)
-                t2d6          = random.diceRoll(1,6)
-                t2d10         = random.diceRoll(1,10)
+                t1d6          = random.dice_roll(1,6)
+                t1d10         = random.dice_roll(1,10)
+                t2d6          = random.dice_roll(1,6)
+                t2d10         = random.dice_roll(1,10)
                 # Don't allow duplicate tags, reroll until a new one is generated
                 loopCount = 0
                 while ( (t1d6 == t2d6) and (t1d10 == t2d10) ):
-                    t2d6  = random.diceRoll(1,6)
-                    t2d10 = random.diceRoll(1,10)
+                    t2d6  = random.dice_roll(1,6)
+                    t2d10 = random.dice_roll(1,10)
                     # Catch runaway loop
                     loopCount +=1
                     if (loopCount>100):
                         raise exception.MaxLoopIterationsExceed(MAX_LOOP_ITER)
                 tag1       = world.TABLE_TAGS[t1d6][t1d10]
                 tag2       = world.TABLE_TAGS[t2d6][t2d10]
-                techLevel  = world.TABLE_TECH_LEVEL[random.diceRoll(2,6)]
-                temperatue = world.TABLE_TEMPERATURE[random.diceRoll(2,6)]
+                techLevel  = world.TABLE_TECH_LEVEL[random.dice_roll(2,6)]
+                temperatue = world.TABLE_TEMPERATURE[random.dice_roll(2,6)]
                 newWorld = world.World(name          = newWorldName,
                                        atmosphere    = atmosphere,
                                        biosphere     = biosphere,
@@ -389,16 +389,16 @@ class Generator(object):
 
         # Fill system data -----------------------------------------------------
         # Use one roll star system (ORSS) rules
-        for systemKey in newSector.SortedSystems():
+        for systemKey in newSector.sorted_systems():
             # Get current system
             systemObj = newSector.systems[systemKey]
             # Rolls (ORSS)
-            d4  = random.diceRoll(1,4)
-            d6  = random.diceRoll(1,6)
-            d8  = random.diceRoll(1,8)
-            d10 = random.diceRoll(1,10)
-            d12 = random.diceRoll(1,12)
-            d20 = random.diceRoll(1,20)
+            d4  = random.dice_roll(1,4)
+            d6  = random.dice_roll(1,6)
+            d8  = random.dice_roll(1,8)
+            d10 = random.dice_roll(1,10)
+            d12 = random.dice_roll(1,12)
+            d20 = random.dice_roll(1,20)
             # Get main world from system (i.e. the first in the list with the highest TL)
             mainWorld = max(systemObj.worlds,key=lambda w: world.TABLE_TECH_LEVEL_REVERSE[w.techLevel])
             # Get main world orbit temperature mod
@@ -437,7 +437,7 @@ class Generator(object):
                 # 2nd star has +4 to existing d12 roll(ORSS)
                 d12Mod += 4
                 # 2nd star has alternate d10 roll (ORSS)    
-                d10Mod   = random.diceRoll(1,10)
+                d10Mod   = random.dice_roll(1,10)
                 # d12 table modifies orbit position (ORSS)
                 mainOrbit += system.TABLE_MAIN_WORLD_ORBIT_MOD[d12Mod]
                 # Second star color and spectral subclass (ORSS)
@@ -457,11 +457,11 @@ class Generator(object):
             # Add moons and rings to gas giants. Will replace with main world moons and rings if necessary.
             for gl in gasList:
                 # Roll a d20 to determine the number of moons and rings for the giant
-                gasD20 = random.diceRoll(1,20)
+                gasD20 = random.dice_roll(1,20)
                 # Does the giant have rings
-                gl.rings = self.Rings(gasD20)
+                gl.rings = self.rings(gasD20)
                 # Add moons to the gas giant
-                gl.moons = self.Moons(gasD20)
+                gl.moons = self.moons(gasD20)
             # Total number of objects (ORSS)
             numObjects = d4 + d8 - 1
             # Place objects in orbits
@@ -475,13 +475,13 @@ class Generator(object):
                 for o in xrange(mainOrbit-len(orbitalList)):
                     orbitalList.append(None)
             # Fill main world orbit
-            moonList = self.Moons(d20)
+            moonList = self.moons(d20)
             #    If airless or thin, determine which one
             if ( mainWorld.atmosphere == world.TABLE_ATMOSPHERE[4] ):
                 #    On a d2, 1 is airless, 2 is thin
                 #    Airless are going to be space stations or moon bases
                 #    Thin are going to be thin atmosphere rocky planets
-                if (random.diceRoll(1,2) == 1):
+                if (random.dice_roll(1,2) == 1):
                     # If airless, world is a moon or space station
                     # If main world table rolls has moons, it is a moon, else it is a station
                     if ( len(moonList) > 0 ):
@@ -527,7 +527,7 @@ class Generator(object):
                 isStation     = False
                 ofGas         = False
                 # New atmosphere roll
-                roll2d5 = random.diceRoll(2,5)
+                roll2d5 = random.dice_roll(2,5)
                 mainWorld.atmosphere = world.TABLE_ALT_ATMOSPHERE[roll2d5]
             # Does it have rings
             hasRings = orbitalobject.TABLE_MINOR_RINGS[d20]
@@ -535,7 +535,7 @@ class Generator(object):
             # Moon of another body
             if ( isMoon ):
                 # Attach main world to a moon
-                moonList[random.diceRoll(1,len(moonList))-1].world = mainWorld
+                moonList[random.dice_roll(1,len(moonList))-1].world = mainWorld
                 # Moon of a gas giant
                 if ( ofGas ):
                     # Get gas giant to attach world as a moon to
@@ -679,11 +679,11 @@ class Generator(object):
             ## Place remaining worlds that don't have airless/thin atomspheres
             for ow in otherWorlds:
                 # d20 roll for planet stats
-                d20 = random.diceRoll(1,20)
+                d20 = random.dice_roll(1,20)
                 # Create moons
-                moonList = self.Moons(d20)
+                moonList = self.moons(d20)
                 # Create rings
-                hasRings = self.Rings(d20)
+                hasRings = self.rings(d20)
                 # Create rocky planet
                 rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
                                                    moons      = moonList,
@@ -758,11 +758,11 @@ class Generator(object):
             for ioIndex in innerOrbits:
                 if ( orbitalList[ioIndex] == None ):
                     # d20 roll for planet stats
-                    d20 = random.diceRoll(1,20)
+                    d20 = random.dice_roll(1,20)
                     # Create moons
-                    moonList = self.Moons(d20)
+                    moonList = self.moons(d20)
                     # Create rings
-                    hasRings = self.Rings(d20)
+                    hasRings = self.rings(d20)
                     # Create hot planet
                     rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['HOT_ROCK'],
                                                        moons      = moonList,
@@ -773,14 +773,14 @@ class Generator(object):
             for ooIndex in outerOrbits:
                 if ( orbitalList[ooIndex] == None ):
                     # d20 roll for planet stats
-                    d20 = random.diceRoll(1,20)
+                    d20 = random.dice_roll(1,20)
                     # Create moons
-                    moonList = self.Moons(d20)
+                    moonList = self.moons(d20)
                     # Create rings
-                    hasRings = self.Rings(d20)
+                    hasRings = self.rings(d20)
                     # Create cold planet
                     # On a d2, 1 is a cold stone planet and 2 is an ice planet
-                    if (random.diceRoll(1,2) == 1):
+                    if (random.dice_roll(1,2) == 1):
                         objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['COLD_STONE']
                     else:
                         objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ICE']
@@ -805,11 +805,11 @@ class Generator(object):
                         # otherwise we'll revert to it being a space station
                         isMoon    = False
                         isStation = True
-                        if (random.diceRoll(1,2) == 2):
+                        if (random.dice_roll(1,2) == 2):
                             if ( len(orbitalList[roi].moons) > 0 ):
                                 # If the randomly chosen moon has a world already, just
                                 # make this a station instead
-                                moonRoll = random.diceRoll(1,len(orbitalList[roi].moons))
+                                moonRoll = random.dice_roll(1,len(orbitalList[roi].moons))
                                 if ( orbitalList[roi].moons[moonRoll-1].world == None ):
                                     isMoon    = True
                                     isStation = False
@@ -828,23 +828,23 @@ class Generator(object):
             # Get list of worlds in this orbit list
             orbitWorldList = list()
             for ol in orbitalList:
-                orbitWorldList += ol.Worlds()
+                orbitWorldList += ol.world_list()
             # Compare orbit list worlds system worlds
             for owl in orbitWorldList:
                 if ( owl not in systemObj.worlds ):
                     # d20 roll for planet stats
-                    d20 = random.diceRoll(1,20)
+                    d20 = random.dice_roll(1,20)
                     # Create moons
-                    moonList = self.Moons(d20)
+                    moonList = self.moons(d20)
                     # Create rings
-                    hasRings = self.Rings(d20)
+                    hasRings = self.rings(d20)
                     # Create rocky planet
                     rockyPlanet = orbitalobject.Planet(objectType = orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['ROCKY'],
                                                        moons      = moonList,
                                                        rings      = hasRings,
                                                        worldObj   = owl)
                     # Randomly place world
-                    orbitInsert = random.diceRoll(1,len(orbitalList))-1
+                    orbitInsert = random.dice_roll(1,len(orbitalList))-1
                     orbitalList.insert(orbitInsert,rockyPlanet)
             # Put orbital list into system objects list
             systemObj.objects = orbitalList
@@ -860,11 +860,10 @@ class Generator(object):
         # Return new sector ----------------------------------------------------
         return(newSector)
 
-    def setSeed(self,seedString):
+    def set_seed(self,seedString):
         # Check arguments
         #   name
-        if not (isinstance(seedString,str)):
-            raise exception.InvalidArgType(argName,str)
+        seedString = exception.arg_check(seedString,str)
         # Set seed
-        random.setSeed(random.seedAlphabetDecode(seedString))
+        random.setSeed(random.seed_alphabet_decode(seedString))
         self.seed = seedString

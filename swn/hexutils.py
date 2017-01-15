@@ -2,53 +2,53 @@
 
 # Axial coordinate conversions -------------------------------------------------
 ## Axial to cube.
-def axialToCube(q,r):
+def axial_to_cube(q,r):
     x = q
     z = r
     y = -x-z
     return(x,y,z)
 
 ## Axial to odd-q.
-def axialToOddQ(q,r):
-    (x,y,z) = axialToCube(q,r)
-    (row,col) = cubeToOddQ(x,y,z)
+def axial_to_odd_q(q,r):
+    (x,y,z) = axial_to_cube(q,r)
+    (row,col) = cube_to_odd_q(x,y,z)
     return(row,col)
 
 # Cube coordinate conversions --------------------------------------------------
 ## Cube to axial.
-def cubeToAxial(x,y,z):
+def cube_to_axial(x,y,z):
     q = x
     r = z
     return(q,r)
 
 ## Cube to odd-q.
-def cubeToOddQ(x,y,z):
+def cube_to_odd_q(x,y,z):
     col = x
     row = z + (x - (x&1)) / 2
     return(row,col)
 
 # Offset coordinate conversions ------------------------------------------------
 ## Odd-q to axial.
-def oddQToAxial(row,col):
-    (x.y,z) = oddQToCube(row,col)
-    (q,r) = cubeToAxial(x,y,z)
+def odd_q_to_axial(row,col):
+    (x.y,z) = odd_q_to_cube(row,col)
+    (q,r) = cube_to_axial(x,y,z)
     return(q,r)
 
 ## Odd-q to cube.
-def oddQToCube(row,col):
+def odd_q_to_cube(row,col):
     x = col
     z = row - (col - (col&1)) / 2
     y = -x-z
     return(x,y,z)
 
 # Rounding ---------------------------------------------------------------------
-def axialRound(q,r):
-    (x,y,z) = axialToCube(q,r)
-    (rx,ry,rz) = cubeRound(x,y,z)
-    (rq,rr) = cubeToAxial(rx,ry,rz)
+def axial_round(q,r):
+    (x,y,z) = axial_to_cube(q,r)
+    (rx,ry,rz) = cube_round(x,y,z)
+    (rq,rr) = cube_to_axial(rx,ry,rz)
     return(rQ,rR)
 
-def cubeRound(x,y,z):
+def cube_round(x,y,z):
     rX = round(x)
     rY = round(y)
     rZ = round(z)
@@ -63,39 +63,39 @@ def cubeRound(x,y,z):
         rZ = -rX-rY
     return(int(rX),int(rY),int(rZ))
 
-def oddQRound(row,col):
-    (x,y,z) = oddQToCube(row,col)
-    (rX,rY,rZ) = cubeRound(x,y,z)
-    (rRow,rCol) = cubeToOddQ(rX,rY,rZ)
+def odd_q_round(row,col):
+    (x,y,z) = odd_q_to_cube(row,col)
+    (rX,rY,rZ) = cube_round(x,y,z)
+    (rRow,rCol) = cube_to_odd_q(rX,rY,rZ)
     return(rRow,rCol)
 
 # Distances --------------------------------------------------------------------
 ## Axial coordinate distance.
-def axialDistance(aQ,aR,bQ,bR):
-    (aX,aY,aZ) = axialToCube(aQ,aR)
-    (bX,bY,bZ) = axialToCube(bQ,bR)
-    return(cubeDistance(aX,aY,aZ,bX,bY,bZ))
+def axial_distance(aQ,aR,bQ,bR):
+    (aX,aY,aZ) = axial_to_cube(aQ,aR)
+    (bX,bY,bZ) = axial_to_cube(bQ,bR)
+    return(cube_distance(aX,aY,aZ,bX,bY,bZ))
 
 ## Cube coordinate distance.
-def cubeDistance(aX,aY,aZ,bX,bY,bZ):
+def cube_distance(aX,aY,aZ,bX,bY,bZ):
     return((abs(aX - bX) + abs(aY - bY) + abs(aZ - bZ))/2)
 
 ## Odd-r coordinate distance.
-def oddQDistance(aRow,aCol,bRow,bCol):
-    (aX,aY,aZ) = oddQToCube(aRow,aCol)
-    (bX,bY,bZ) = oddQToCube(bRow,bCol)
-    return(cubeDistance(aX,aY,aZ,bX,bY,bZ))
+def odd_q_distance(aRow,aCol,bRow,bCol):
+    (aX,aY,aZ) = odd_q_to_cube(aRow,aCol)
+    (bX,bY,bZ) = odd_q_to_cube(bRow,bCol)
+    return(cube_distance(aX,aY,aZ,bX,bY,bZ))
 
 # Neighbors --------------------------------------------------------------------
-def axialNeighbors(q,r):
+def axial_neighbors(q,r):
     (x,y,z) = axialtoCube(q,r)
-    cn = cubeNeighbors(x,y,z)
+    cn = cube_neighbors(x,y,z)
     neighbors = list()
     for c in cn:
-        neighbors.append(cubeToAxial(c[0],c[1],c[2]))
+        neighbors.append(cube_to_axial(c[0],c[1],c[2]))
     return(neighbors)
 
-def cubeNeighbors(x,y,z):
+def cube_neighbors(x,y,z):
     relNeighbors = [[ 1,-1, 0],
                     [ 1, 0,-1],
                     [ 0, 1,-1],
@@ -107,51 +107,51 @@ def cubeNeighbors(x,y,z):
         neighbors.append([x+rn[0],y+rn[1],z+rn[2]])
     return(neighbors)
 
-def oddQNeighbors(row,col):
+def odd_q_neighbors(row,col):
     neighbors = list()
-    (x,y,z) = oddQToCube(row,col)
-    cn = cubeNeighbors(x,y,z)
+    (x,y,z) = odd_q_to_cube(row,col)
+    cn = cube_neighbors(x,y,z)
     neighbors = list()
     for c in cn:
-        neighbors.append(cubeToOddQ(c[0],c[1],c[2]))
+        neighbors.append(cube_to_odd_q(c[0],c[1],c[2]))
     return(neighbors)
 
 # Lines ------------------------------------------------------------------------
-def axialLine(aQ,aR,bQ,bR):
-    (aX,aY,aZ) = axialToCube(aQ,aR)
-    (bX,bY,bZ) = axialToCube(bQ,bR)
-    cubeLineList = cubeLine(aX,aY,aZ,bX,bY,bZ)
+def axial_line(aQ,aR,bQ,bR):
+    (aX,aY,aZ) = axial_to_cube(aQ,aR)
+    (bX,bY,bZ) = axial_to_cube(bQ,bR)
+    cubeLineList = cube_line(aX,aY,aZ,bX,bY,bZ)
     axialLineList = list()
     for cl in cubeLineList:
-        axialLineList.append(cubeToAxial(cl[0],cl[1],cl[2]))
+        axialLineList.append(cube_to_axial(cl[0],cl[1],cl[2]))
     return(axialLineList)
 
-def cubeLine(aX,aY,aZ,bX,bY,bZ):
-    d = cubeDistance(aX,aY,aZ,bX,bY,bZ)
+def cube_line(aX,aY,aZ,bX,bY,bZ):
+    d = cube_distance(aX,aY,aZ,bX,bY,bZ)
     line = list()
     for step in range(d+1):
-        (rX,rY,rZ) = cubeLInterp(aX,aY,aZ,bX,bY,bZ,1.0/d * step)
-        line.append(cubeRound(rX,rY,rZ))
+        (rX,rY,rZ) = cube_linterp(aX,aY,aZ,bX,bY,bZ,1.0/d * step)
+        line.append(cube_round(rX,rY,rZ))
     return(line)
 
-def oddQLine(aRow,aCol,bRow,bCol):
-    (aX,aY,aZ) = oddQToCube(aRow,aCol)
-    (bX,bY,bZ) = oddQToCube(bRow,bCol)
-    cubeLineList = cubeLine(aX,aY,aZ,bX,bY,bZ)
+def odd_q_line(aRow,aCol,bRow,bCol):
+    (aX,aY,aZ) = odd_q_to_cube(aRow,aCol)
+    (bX,bY,bZ) = odd_q_to_cube(bRow,bCol)
+    cubeLineList = cube_line(aX,aY,aZ,bX,bY,bZ)
     oddQLineList = list()
     for cl in cubeLineList:
-        oddQLineList.append(cubeToOddQ(cl[0],cl[1],cl[2]))
+        oddQLineList.append(cube_to_odd_q(cl[0],cl[1],cl[2]))
     return(oddQLineList)
 
 # Linear interpolation ---------------------------------------------------------
-def axialLInterp(aQ,aR,bQ,bR,t):
-    (aX,aY,aZ) = axialToCube(aQ,aR)
-    (bX,bY,bZ) = axialToCube(bQ,bR)
-    (x,y,z) = cubeLInterp(aX,aY,aZ,bX,bY,bZ,t)
-    (q,r) = cubeToAxial(x,y,z)
+def axial_linterp(aQ,aR,bQ,bR,t):
+    (aX,aY,aZ) = axial_to_cube(aQ,aR)
+    (bX,bY,bZ) = axial_to_cube(bQ,bR)
+    (x,y,z) = cube_linterp(aX,aY,aZ,bX,bY,bZ,t)
+    (q,r) = cube_to_axial(x,y,z)
     return(q,r)
 
-def cubeLInterp(aX,aY,aZ,bX,bY,bZ,t):
+def cube_linterp(aX,aY,aZ,bX,bY,bZ,t):
     x = aX + (bX - aX) * t
     y = aY + (bY - aY) * t
     z = aZ + (bZ - aZ) * t

@@ -27,13 +27,13 @@ class Map(object):
 
     ## Set map parameters.
     #  @param self The object pointer.
-    def SetParams(self,
-                  width             = _IMAGE_WIDTH,
-                  height            = _IMAGE_HEIGHT,
-                  topMarginRatio    = _TOP_MARGIN_RATIO,
-                  bottomMarginRatio = _BOTTOM_MARGIN_RATIO,
-                  leftMarginRatio   = _LEFT_MARGIN_RATIO,
-                  rightMarginRatio  = _RIGHT_MARGIN_RATIO):
+    def set_params(self,
+                   width             = _IMAGE_WIDTH,
+                   height            = _IMAGE_HEIGHT,
+                   topMarginRatio    = _TOP_MARGIN_RATIO,
+                   bottomMarginRatio = _BOTTOM_MARGIN_RATIO,
+                   leftMarginRatio   = _LEFT_MARGIN_RATIO,
+                   rightMarginRatio  = _RIGHT_MARGIN_RATIO):
 
 ## Documentation for a method.
 #  @param self The object pointer.

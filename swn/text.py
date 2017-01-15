@@ -58,12 +58,12 @@ class HexMap(object):
                  border = None):
         # Argument parsing -----------------------------------------------------
         # Map title
-        self.title = exception.ArgCheck(title,str,'')
+        self.title = exception.arg_check(title,str,'')
         # Map size
         if ( not ( (size == LARGE_MAP ) or ( size == SMALL_MAP ) ) ):
             # TODO: raise error of invalid map size argument
             size = SMALL_MAP
-        self.size  = exception.ArgCheck(size,str,SMALL_MAP)
+        self.size  = exception.arg_check(size,str,SMALL_MAP)
         # Hex text info
         if ( self.size == LARGE_MAP ):
             hexText        = LARGE_ODDR_TEXT
@@ -78,13 +78,13 @@ class HexMap(object):
             hexCoord       = SMALL_ODDR_TEXT_COORD
             self.hexLabel  = SMALL_ODDR_TEXT_LABEL
         # Map rows
-        self.rows = exception.ArgCheck(rows,int,sector.MAX_ROWS)
+        self.rows = exception.arg_check(rows,int,sector.MAX_ROWS)
         # Map columns
-        self.cols = exception.ArgCheck(cols,int,sector.MAX_COLS)
+        self.cols = exception.arg_check(cols,int,sector.MAX_COLS)
         # Print map coordinates flag
-        coords = exception.ArgCheck(coords,bool,False)
+        coords = exception.arg_check(coords,bool,False)
         # Map border
-        self.border = exception.ArgCheck(border,str,MAP_BORDER)
+        self.border = exception.arg_check(border,str,MAP_BORDER)
         # Map padding
         self.padding = 1
 
@@ -137,14 +137,14 @@ class HexMap(object):
             cEvenColRowOffset += self.hexHeight-1
             cOddColRowOffset  += self.hexHeight-1
 
-    def AddLabel(self,
+    def add_label(self,
                  label,
                  row,
                  col):
         # Check arguments
-        exception.ArgCheck(label,str)
-        exception.ArgCheck(row,int)
-        exception.ArgCheck(col,int)
+        exception.arg_check(label,str)
+        exception.arg_check(row,int)
+        exception.arg_check(col,int)
         # Array character row offset to start this hex from
         cRowOffset = row*(self.hexHeight-1)
         # Offset more for odd columns
@@ -159,7 +159,7 @@ class HexMap(object):
         for i in xrange(len(label)):
             self.hexMap[cRowOffset][cColOffset+i] = label[i]
 
-    def Print(self):
+    def print_text(self):
         mapWidth  = len(self.hexMap[0])
         border  = self.border*(mapWidth + self.padding*2 + 2)
         padding = self.border + ' '*(self.padding*2 + mapWidth) + self.border
@@ -179,13 +179,13 @@ class HexMap(object):
 class Table(object):
     def __init__(self,title=None,border=None,colSep=None,rowSep=None):
         # Table title
-        self.title = exception.ArgCheck(title,str,'')
+        self.title = exception.arg_check(title,str,'')
         # Table border character
-        self.border = exception.ArgCheck(border,str,TABLE_BORDER)
+        self.border = exception.arg_check(border,str,TABLE_BORDER)
         # Table column separator character
-        self.colSep = exception.ArgCheck(colSep,str,TABLE_COL_SEP)
+        self.colSep = exception.arg_check(colSep,str,TABLE_COL_SEP)
         # Table row separator character
-        self.rowSep = exception.ArgCheck(rowSep,str,TABLE_ROW_SEP)
+        self.rowSep = exception.arg_check(rowSep,str,TABLE_ROW_SEP)
         # Column Headings
         self.headings = list()
         # Column justification
@@ -193,16 +193,16 @@ class Table(object):
         # Data rows
         self.rows = list()
 
-    def AddHeading(self,heading=None,justify=None):
+    def add_heading(self,heading=None,justify=None):
         # If argument is a single value make it a list with one entry
         if ( type(heading) is not list ):
             heading = [heading]
         # Add each heading in list
         for h in heading:
             # Add heading
-            self.headings.append(exception.ArgCheck(h,str,''))
+            self.headings.append(exception.arg_check(h,str,''))
             # Set column justification
-            j = exception.ArgCheck(justify,str,'L')
+            j = exception.arg_check(justify,str,'L')
             if ( (j != JUSTIFY_LEFT.lower()) or (j != JUSTIFY_CENTER.lower()) or (j != JUSTIFY_RIGHT.lower()) or
                  (j != JUSTIFY_LEFT)         or (j != JUSTIFY_CENTER)         or (j != JUSTIFY_RIGHT) ):
                 self.justify.append(j.upper())
@@ -213,15 +213,15 @@ class Table(object):
             for r in self.rows:
                 r.append('')
 
-    def AddRow(self,row=None):
+    def add_row(self,row=None):
         # Check that row is a list
-        row  = exception.ArgCheck(row,list,list())
+        row  = exception.arg_check(row,list,list())
         # Add empty data if row data does not have enough columns
         row += ['' for diff in xrange(len(self.headings)-len(row))]
         # Add to rows list
         self.rows.append(row)
 
-    def Print(self):
+    def print_text(self):
         # Calculate maximum width of each column
         colWidth = dict()
         # Start with base value being the width of the headings

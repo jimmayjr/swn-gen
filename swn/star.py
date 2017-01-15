@@ -56,9 +56,9 @@ class Star(object):
                  colorText        = None,
                  spectralSubclass = None):
         # Check arguments
-        exception.ArgCheck(color,str,'')
-        exception.ArgCheck(colorText,str,'')
-        exception.ArgCheck(spectralSubclass,int,0)
+        exception.arg_check(color,str,'')
+        exception.arg_check(colorText,str,'')
+        exception.arg_check(spectralSubclass,int,0)
 
         # Star information
         self.color            = color

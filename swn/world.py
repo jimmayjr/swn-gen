@@ -214,23 +214,23 @@ class World(object):
                  temperature = '',
                  techLevel = '0'):
         # General information
-        self.name = exception.ArgCheck(name,str,'')
+        self.name = exception.arg_check(name,str,'')
 
         # Roll information
-        self.atmosphere  = exception.ArgCheck(atmosphere,str,'')
-        self.biosphere   = exception.ArgCheck(biosphere,str,'')
-        self.population  = exception.ArgCheck(population,str,'')
-        self.tags        = exception.ArgCheck(tags,list,['',''])
+        self.atmosphere  = exception.arg_check(atmosphere,str,'')
+        self.biosphere   = exception.arg_check(biosphere,str,'')
+        self.population  = exception.arg_check(population,str,'')
+        self.tags        = exception.arg_check(tags,list,['',''])
         for tag in tags:
             if not (isinstance(tag,str)):
                 raise exception.InvalidListItemType(tag,str)
-        self.temperature = exception.ArgCheck(temperature,str,'')
-        self.techLevel   = exception.ArgCheck(techLevel,str,'0')
+        self.temperature = exception.arg_check(temperature,str,'')
+        self.techLevel   = exception.arg_check(techLevel,str,'0')
 
         # Alternate roll information
-        self.populationAlt = exception.ArgCheck(populationAlt,int,0)
+        self.populationAlt = exception.arg_check(populationAlt,int,0)
 
-    def PopulationAltText(self):
+    def population_alt_text(self):
         # Floor to 3 significant figures
         if ( self.populationAlt > 99999 ):
             return('{:,}'.format(int(str(self.populationAlt)[0:3]+'0'*(len(str(self.populationAlt))-3))))

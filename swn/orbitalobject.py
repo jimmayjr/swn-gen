@@ -107,10 +107,10 @@ class BaseOrbitalObject(object):
                  objectType = None,
                  worldObj   = None):
         # Check arguments
-        self.objectType = exception.ArgCheck(objectType,str)
-        self.world      = exception.ArgCheck(worldObj,world.World,None)
+        self.objectType = exception.arg_check(objectType,str)
+        self.world      = exception.arg_check(worldObj,world.World,None)
 
-    def Worlds(self):
+    def world_list(self):
         if ( self.world == None ):
             return([])
         else:
@@ -122,7 +122,7 @@ class AsteroidBelt(BaseOrbitalObject):
                  objectType = None):
         # Initialize base class
         BaseOrbitalObject.__init__(self,
-                                   objectType = exception.ArgCheck(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['ROCKY_ASTEROID_BELT']))
+                                   objectType = exception.arg_check(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['ROCKY_ASTEROID_BELT']))
 
 # Moon class -------------------------------------------------------------------
 class Moon(BaseOrbitalObject):
@@ -131,8 +131,8 @@ class Moon(BaseOrbitalObject):
                  worldObj   = None):
         # Initialize base class
         BaseOrbitalObject.__init__(self,
-                                   objectType = exception.ArgCheck(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']),
-                                   worldObj   = exception.ArgCheck(worldObj,world.World,None))
+                                   objectType = exception.arg_check(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['SMALL_MOON']),
+                                   worldObj   = exception.arg_check(worldObj,world.World,None))
 
 # Planet class -----------------------------------------------------------------
 class Planet(BaseOrbitalObject):
@@ -143,20 +143,20 @@ class Planet(BaseOrbitalObject):
                  rings      = None,
                  worldObj   = None):
         # Check arguments
-        self.stations = exception.ArgCheck(stations, list,        list())
-        self.moons    = exception.ArgCheck(moons,    list,        list())
-        self.rings    = exception.ArgCheck(rings,    bool,        False)
+        self.stations = exception.arg_check(stations, list,        list())
+        self.moons    = exception.arg_check(moons,    list,        list())
+        self.rings    = exception.arg_check(rings,    bool,        False)
         # Initialize base class
         BaseOrbitalObject.__init__(self,
-                                   objectType = exception.ArgCheck(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['ROCKY']),
-                                   worldObj   = exception.ArgCheck(worldObj,world.World,None))
+                                   objectType = exception.arg_check(objectType,str,TABLE_ORBITAL_OBJECT_TYPE['ROCKY']),
+                                   worldObj   = exception.arg_check(worldObj,world.World,None))
 
-    def Worlds(self):
-        worlds  = BaseOrbitalObject.Worlds(self)
+    def world_list(self):
+        worlds  = BaseOrbitalObject.world_list(self)
         for s in self.stations:
-            worlds += s.Worlds()
+            worlds += s.world_list()
         for m in self.moons:
-            worlds += m.Worlds()
+            worlds += m.world_list()
         return(worlds)
 
 # Space station class ----------------------------------------------------------
@@ -166,4 +166,4 @@ class SpaceStation(BaseOrbitalObject):
         # Initialize base class
         BaseOrbitalObject.__init__(self,
                                    objectType = TABLE_ORBITAL_OBJECT_TYPE['SPACE_STATION'],
-                                   worldObj   = exception.ArgCheck(worldObj,world.World,None))
+                                   worldObj   = exception.arg_check(worldObj,world.World,None))
