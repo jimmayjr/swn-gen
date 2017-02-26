@@ -9,6 +9,7 @@ import operator
 import exception
 import generator
 import hexutils
+import orbitalobject
 import system
 import text
 
@@ -64,6 +65,77 @@ class Sector(object):
             cIndex += 1
         # Print table
         table.print_text()
+
+    def print_orbit_maps(self):
+        columnHeight = 3
+        # Create orbit map for each system
+        for systemKey in self.sorted_systems():
+            starSystem = self.systems[systemKey]
+            # Initial empty map
+            systemMap = text.OrbitMap(starSystem.name + ' - ' + 'Orbit Map')
+            # Determine maximum number of objects per orbit
+            # Start with the number of stars in this system
+            maxObjects = len(starSystem.stars)
+            # Check orbital objects
+            for o in starSystem.objects:
+                # Start with 1 for the planet or asteroid belt
+                orbitCount = 1
+                if ( type(o) is orbitalobject.Planet ):
+                    # For each station
+                    for s in o.stations:
+                        orbitCount += 1
+                    # For each moon
+                    for m in o.moons:
+                        orbitCount += 1
+                maxObjects = max(maxObjects,orbitCount)
+            # Add stars
+            orbitList = list()
+            for s in starSystem.stars:
+                orbitList.append(s.color.upper()[0]+str(s.spectralSubclass))
+            systemMap.add_orbit(orbitList)
+            # Add planets and asteroid belts
+            for o in starSystem.objects:
+                orbitList = list()
+                # Add planet
+                if ( type(o) is orbitalobject.Planet ):
+                    planetString = orbitalobject.TABLE_ORBITAL_OBJECT_ABBREVIATIONS[o.objectType]
+                    # Signify if planet is a world
+                    if ( o.world is not None ):
+                        worldIndex = starSystem.worlds.index(o.world)
+                        orbitList.append(planetString + '-W' + str(worldIndex+1))
+                    else:
+                        orbitList.append(planetString)
+                    # Satellites
+                    satelliteList = list()
+                    # For each station
+                    for s in o.stations:
+                        stationString = orbitalobject.TABLE_ORBITAL_OBJECT_ABBREVIATIONS[s.objectType]
+                        # Signify if station is a world
+                        if ( s.world is not None ):
+                            worldIndex = starSystem.worlds.index(s.world)
+                            satelliteList.append(stationString + '-W' + str(worldIndex+1))
+                        else:
+                            satelliteList.append(stationString)
+                    # For each moon
+                    for m in o.moons:
+                        moonString = orbitalobject.TABLE_ORBITAL_OBJECT_ABBREVIATIONS[m.objectType]
+                        # Signify if moon is a world
+                        if ( m.world is not None ):
+                            worldIndex = starSystem.worlds.index(m.world)
+                            satelliteList.append(moonString + '-W' + str(worldIndex+1))
+                        else:
+                            satelliteList.append(moonString)
+                    # Add planets to list
+                    systemMap.add_orbit(orbitList,satelliteList)
+                # Add asteroid belt
+                elif ( type(o) is orbitalobject.AsteroidBelt ):
+                    # Determine abbreviation for belt
+                    beltString = orbitalobject.TABLE_ORBITAL_OBJECT_ABBREVIATIONS[o.objectType]
+                    # Fill orbit to maxObjects length with belt abbreviation
+                    orbitList += [beltString for objectNum in xrange(maxObjects)]
+                    systemMap.add_orbit(orbitList)
+            # Print orbit map
+            systemMap.print_text()
 
     def print_religions(self):
         # Create table

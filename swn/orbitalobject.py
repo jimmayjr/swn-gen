@@ -99,6 +99,23 @@ TABLE_ORBITAL_OBJECT_TYPE = {
     'SPACE_STATION':             'space station'
 }
 
+# Orbital object abbreviations
+TABLE_ORBITAL_OBJECT_ABBREVIATIONS = {
+    'cold stone':               'CP',
+    'hot rock':                 'HP',
+    'hydrocarbon astroid belt': 'HB',
+    'ice':                      'IP',
+    'icy asteroid belt':        'IB',
+    'rocky':                    'RP',
+    'large gas':                'LG',
+    'medium moon':              'MM',
+    'metal asteroid belt':      'MB',
+    'rocky asteroid belt':      'RB',
+    'small gas':                'SG',
+    'small moon':               'SM',
+    'space station':            'SS' 
+}
+
 # Base orbital object class ----------------------------------------------------
 class BaseOrbitalObject(object):
     __metaclass__ = abc.ABCMeta

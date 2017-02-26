@@ -6,7 +6,7 @@ import exception
 import hexutils
 import sector
 
-# Hexmap constants -------------------------------------------------------------
+# HexMap constants -------------------------------------------------------------
 # Map border
 MAP_BORDER = '#'
 
@@ -37,6 +37,10 @@ SMALL_ODDR_TEXT_W =     9     # Width
 SMALL_ODDR_TEXT_H =     5     # Height
 SMALL_ODDR_TEXT_COORD = (1,2) # Coordinate position, zero indexed
 SMALL_ODDR_TEXT_LABEL = (3,4) # Label position, zero indexed 
+
+# Orbit map constants ----------------------------------------------------------
+ORBIT_SATELLITE_SYMBOL = ':-'
+ORBIT_SEPARATOR        = '|'
 
 # Table constants --------------------------------------------------------------
 # Column justification
@@ -175,6 +179,85 @@ class HexMap(object):
         # Print bottom border
         print(padding)
         print(border)
+
+class OrbitMap(object):
+    def __init__(self,
+                 title  = None,
+                 border = None):
+        # Map title
+        self.title = exception.arg_check(title,str,'')
+        # Map border
+        self.border = exception.arg_check(border,str,MAP_BORDER)
+        # Map padding
+        self.mapPadding = 1
+        # Orbit padding
+        self.orbitPadding = 2
+        # Map orbits
+        self.orbits = list()
+
+    def add_orbit(self,
+                  bodies     = None,
+                  satellites = None):
+        # Check arguments
+        bodies = exception.arg_check(bodies,list,list())
+        satellites = exception.arg_check(satellites,list,list())
+        for b in bodies:
+            exception.arg_check(b,str)
+        for s in satellites:
+            exception.arg_check(s,str)
+        # Create list for orbit
+        orbit = list()
+        # Add bodies to orbit
+        for b in bodies:
+            orbit.append(b)
+        # Add satellites to orbit
+        for s in satellites:
+            orbit.append(ORBIT_SATELLITE_SYMBOL + s)
+        # Add orbit to map list
+        self.orbits.append(orbit)
+
+    def print_text(self):
+        # Determine number of rows to create based on the largest number of 
+        # bodies in an orbit
+        rows = [''] * max(map(lambda orbit: len(orbit), self.orbits))
+        # Add border and padding to rows at beginning
+        for rIndex in xrange(len(rows)):
+            rows[rIndex] += self.border + ' '*self.mapPadding
+        # Add orbits to rows
+        orbitCount = 0
+        orbitMax = len(self.orbits)
+        for orbit in self.orbits:
+            # Number of columns should be the longest orbit text
+            numCols = max(map(lambda objectString: len(objectString), orbit))
+            # Get text for new columns of rows
+            newCols = [' '*numCols]*len(rows)
+            for bodyIndex in xrange(len(orbit)):
+                bodyString = orbit[bodyIndex]
+                newCols[bodyIndex] = bodyString + newCols[bodyIndex][len(bodyString):]
+            # Add orbit text to rows
+            for rIndex in xrange(len(rows)):
+                rows[rIndex] += newCols[rIndex]
+            orbitCount += 1
+            # Add orbit separator
+            if ( orbitCount != orbitMax ):
+                for rIndex in xrange(len(rows)):
+                    rows[rIndex] += ' '*self.orbitPadding + ORBIT_SEPARATOR + ' '*self.orbitPadding
+        # Add border and padding to rows at end
+        for rIndex in xrange(len(rows)):
+            rows[rIndex] += ' '*self.mapPadding + self.border
+
+        # Print heading
+        mapWidth = len(rows[0])
+        print(self.border*mapWidth)
+        print(self.border + ' ' + self.title + ' '*(mapWidth-len(self.title)-3) + self.border)
+        print(self.border*mapWidth)
+        # Print rows
+        for r in rows:
+            print(r)
+        # Print end
+        print(self.border*mapWidth)
+        # Print empty line
+        print('')
 
 class Table(object):
     def __init__(self,title=None,border=None,colSep=None,rowSep=None):
