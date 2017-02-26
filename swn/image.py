@@ -54,6 +54,7 @@ _SECTOR_LEFT_MARGIN_RATIO   = 0.03
 _SECTOR_RIGHT_MARGIN_RATIO  = 0.03
 
 # Drawing specifications -------------------------------------------------------
+_IMAGE_BACKGROUND            = os.path.join(_DIR_PATH,'images/starfield.png')
 _IMAGE_BACKGROUND_BRIGHTNESS = 0.8
 _ROUTE_WIDTH_RATIO           = 1./10.
 _ROUTE_BLUR_SIZE_RATIO       = 0.6
@@ -92,11 +93,11 @@ _SECTOR_FONT_FILENAME        = _FONT_FILENAME
 _LIST_FONT_FILENAME          = _FONT_FILENAME
 
 
-## Sector map class.
+## Sector image class.
 #
-#  The sector map class is used to create images of an SWN sector.
-class SectorMap(object):
-    ## Map class constructor.
+#  The sector image class is used to create images of an SWN sector.
+class SectorImage(object):
+    ## Sector image class constructor.
     #  @param self The object pointer.
     #  @param rows              Number of hex rows.
     #  @param cols              Number of hex columns.
@@ -128,7 +129,7 @@ class SectorMap(object):
         # Set sector map parameters
         set_params(width, height, topMarginRatio, bottomMarginRatio, leftMarginRatio, rightMarginRatio)
 
-    ## Set map parameters.
+    ## Set image parameters.
     #  @param self              The object pointer.
     #  @param width             Image width in pixels.
     #  @param height            Image height in pixels.
@@ -190,7 +191,7 @@ class SectorMap(object):
 
         # Drawing specifications
         routeWidth       = int(hexSize*_ROUTE_WIDTH_RATIO)
-        routeblurSize    = routeWidth*_ROUTE_BLUR_SIZE_RATIO
+        routeBlurSize    = routeWidth*_ROUTE_BLUR_SIZE_RATIO
         gridWidth        = int(routeWidth*_GRID_WIDTH_RATIO)
         starDiameter     = int(hexSize*_STAR_DIAMETER_RATIO)
         worldOrbitRadius = int(hexHeight*_WORLD_ORBIT_RADIUS_RATIO)
@@ -209,14 +210,22 @@ class SectorMap(object):
         infoMargin         = int(hexSize*_INFO_MARGIN_RATIO)
 
         # Store values
-        self._width          = width
-        self._height         = height
-        self._mapTopLeft     = mapTopLeft
-        self._mapTopRight    = mapTopRight
-        self._mapBottomRight = mapBottomRight
-        self._mapBottomLeft  = mapBottomLeft
-        self._hexSize        = hexSize
-        self._hexFont        = hexFont
-        self._hexNumMargin   = hexNumMargin
-        self._systemNameFont = systemNameFont
-        self._infoFont       = infoFont
+        self._size             = (width, height)
+        self._mapTopLeft       = mapTopLeft
+        self._mapTopRight      = mapTopRight
+        self._mapBottomRight   = mapBottomRight
+        self._mapBottomLeft    = mapBottomLeft
+        self._hexSize          = hexSize
+        self._routeWidth       = routeWidth
+        self._routeBlurSize    = routeBlurSize
+        self._gridWidth        = gridWidth
+        self._starDiameter     = starDiameter
+        self._worldOrbitRadius = worldOrbitRadius
+        self._worldDiameter    = worldDiameter
+        self._triangleLength   = triangleLength
+        self._triangleMargin   = triangleMargin
+        self._hexFont          = hexFont
+        self._hexNumMargin     = hexNumMargin
+        self._systemNameFont   = systemNameFont
+        self._infoFont         = infoFont
+        self._infoMargin       = infoMargin
