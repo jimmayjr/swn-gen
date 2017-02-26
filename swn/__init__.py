@@ -2,6 +2,7 @@ __all__ = ['corporation',
            'exception',
            'generator',
            'hexutils',
+           'image',
            'name',
            'orbitalobject',
            'random',
@@ -15,6 +16,7 @@ import corporation
 import exception
 import generator
 import hexutils
+import image
 import name
 import orbitalobject
 import random
