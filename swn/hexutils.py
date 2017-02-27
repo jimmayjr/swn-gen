@@ -195,9 +195,8 @@ def flat_width(size):
     # Calculate width
     return(size*2.)
 
-def flat_vertex_pixel(size, vertex):
+def flat_vertex(size, vertex):
     # Check arguments
-    exception.arg_check(size,float)
     exception.arg_check(vertex,int)
     # Vertex angle
     deg = 60.*vertex

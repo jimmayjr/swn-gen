@@ -9,6 +9,7 @@ import operator
 import exception
 import generator
 import hexutils
+import image
 import orbitalobject
 import system
 import text
@@ -24,11 +25,19 @@ class Sector(object):
         self.name = exception.arg_check(name,str,argDefault='Default Name')
         # Roll information
         self.corporations = list()
-        self.heresies = list()
-        self.parties = list()
-        self.religions = list()
-        self.systems = dict()
+        self.heresies     = list()
+        self.parties      = list()
+        self.religions    = list()
+        self.systems      = dict()
+        # Custom information
+        self.highlights = list()
+        self.routes     = list()
+        # Images
+        self.images = image.SectorImage(MAX_ROWS, MAX_COLS)
 
+    ## Add a blank system.
+    #
+    #  Add a blank system to a sector.
     def add_blank_system(self,sName,sRow,sCol):
         if (not self.hex_empty(sRow,sCol)):
             raise exception.ExistingDictKey((sRow,sCol))
@@ -38,9 +47,17 @@ class Sector(object):
                                                       objects = list(),
                                                       worlds = list())
 
+    ## Draw sector
+    def draw_sector(self):
+        self.images.draw_sector_map()
+
+
+    ## Hex empty check.
+    #  Check if a sector hex is empty (True) or has a system already (False).
     def hex_empty(self,sRow,sCol):
         return(not self.systems.has_key((sRow,sCol)))
 
+    ## Print table of corporations.
     def print_corporations(self):
         # Create table
         table = text.Table(self.name + ' - ' + 'Sector Corporations')
@@ -66,6 +83,7 @@ class Sector(object):
         # Print table
         table.print_text()
 
+    ## Print system orbit maps.
     def print_orbit_maps(self):
         columnHeight = 3
         # Create orbit map for each system
@@ -137,6 +155,7 @@ class Sector(object):
             # Print orbit map
             systemMap.print_text()
 
+    ## Print table of religions.
     def print_religions(self):
         # Create table
         table = text.Table(self.name + ' - ' + 'Sector Religions')
@@ -165,6 +184,7 @@ class Sector(object):
         # Print table
         table.print_text()
 
+    ## Print table of sector systems information.
     def print_sector_info(self):
         # Create table
         table = text.Table(self.name + ' - ' + 'Sector Info')
@@ -226,6 +246,7 @@ class Sector(object):
         # Print table
         table.print_text()
 
+    ## Print sector hex map.
     def print_sector_map(self,
                        coords = None):
         # Process arguments
@@ -245,9 +266,11 @@ class Sector(object):
         # Print hexmap
         hexMap.print_text()
 
+    ## Sort systems by hex numbering.
     def sorted_systems(self):
         return(sorted(self.systems.iterkeys(),key=lambda e: (e[1], e[0])))
 
+    ## Calculate hex distances between all systems.
     def system_distances(self):
         systems = self.sorted_systems()
         systemDistancesCalc = [ [0] * len(systems) for i in xrange(len(systems)) ]
@@ -259,6 +282,7 @@ class Sector(object):
                 systemDistancesCalc[sAIndex][sBIndex] = hexutils.odd_q_distance(systems[sAIndex][0],systems[sAIndex][1],systems[sBIndex][0],systems[sBIndex][1])
         return(systemDistancesCalc)
 
+    ## Test distances between all systems if a new system is added.
     def system_distances_test(self):
         systems = self.sorted_systems()
         # Distance sum list
@@ -293,6 +317,7 @@ class Sector(object):
                     sumDistAllPos.append((row,col))
         return(sumDistAll,sumDistAllPos)
 
+    ## Calculate distances between groups of systems.
     def system_group_distances(self):
         # Get system groups
         systemGroups = self.system_groups()
@@ -324,6 +349,7 @@ class Sector(object):
                     minDistGroupSystems[sgAIndex][sgBIndex] = minDistPair
         return(groupDistances,minDistGroupSystems)
 
+    ## Find groups of systems.
     def system_groups(self):
         # Sort star systems by hex, col first, row second
         starKeys = self.sorted_systems()
@@ -362,6 +388,7 @@ class Sector(object):
                 raise exception.MaxLoopIterationsExceed(MAX_LOOP_ITER)
         return(groups)
 
+    ## Find neighbors of systems.
     def system_neighbors(self,row,col):
         # Get neighboring hexes
         neighborHexes = hexutils.odd_q_neighbors(row,col)
