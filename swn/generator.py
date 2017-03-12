@@ -208,9 +208,9 @@ class Generator(object):
                     line = hexutils.odd_q_line(aRow,aCol,bRow,bCol)
                     (newRow,newCol) = line[len(line)/2]
                     # Check for lines that fall outside the grid
-                    if ( (newRow == sector.MAX_ROWS) or 
+                    if ( (newRow == sector.SECTOR_ROWS) or 
                          (newRow < 0) or 
-                         (newCol == sector.MAX_COLS) or 
+                         (newCol == sector.SECTOR_COLS) or 
                          (newCol < 0 )):
                         # Sum system distances for all new possible positions
                         (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
@@ -255,9 +255,9 @@ class Generator(object):
                     line = hexutils.odd_q_line(aRow,aCol,bRow,bCol)
                     (newRow,newCol) = line[len(line)/2]
                     # Check for lines that fall outside the grid
-                    if ( (newRow == sector.MAX_ROWS) or 
+                    if ( (newRow == sector.SECTOR_ROWS) or 
                          (newRow < 0) or 
-                         (newCol == sector.MAX_COLS) or 
+                         (newCol == sector.SECTOR_COLS) or 
                          (newCol < 0 )):
                         # Sum system distances for all new possible positions
                         (sumDistAll,sumDistAllPos) = newSector.system_distances_test()
@@ -301,9 +301,9 @@ class Generator(object):
                     line = hexutils.odd_q_line(aRow,aCol,bRow,bCol)
                     (newRow,newCol) = line[len(line)/2]
                     # Check for lines that fall outside the grid
-                    if ( (newRow == sector.MAX_ROWS) or 
+                    if ( (newRow == sector.SECTOR_ROWS) or 
                          (newRow < 0) or 
-                         (newCol == sector.MAX_COLS) or 
+                         (newCol == sector.SECTOR_COLS) or 
                          (newCol < 0 )):
                         # Sum system distances for all new possible positions
                         (sumDistAll,sumDistAllPos) = newSector.system_distances_test()

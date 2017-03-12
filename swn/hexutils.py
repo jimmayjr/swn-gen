@@ -174,6 +174,8 @@ def cube_linterp(aX, aY, aZ, bX, bY, bZ, t):
 def flat_height(size):
     # Check arguments
     exception.arg_check(size, float)
+    # Get width
+    width = flat_width(size)
     # Calculate height
     return(math.sqrt(3.)/2.*width)
 
@@ -211,7 +213,7 @@ def odd_q_center(size, row, col):
     exception.arg_check(col, int)
     # Hex size
     width  = flat_width(size)
-    height = flat_width(size)
+    height = flat_height(size)
     # Center
     cX = width*((1./2.) + (3./4.)*float(col))
     # Center position Y
@@ -223,4 +225,3 @@ def odd_q_center(size, row, col):
         cY = height*(1.+float(row))
     # Center position
     return(cX, cY)
-

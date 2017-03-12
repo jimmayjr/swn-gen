@@ -82,9 +82,9 @@ class HexMap(object):
             hexCoord       = SMALL_ODDR_TEXT_COORD
             self.hexLabel  = SMALL_ODDR_TEXT_LABEL
         # Map rows
-        self.rows = exception.arg_check(rows,int,sector.MAX_ROWS)
+        self.rows = exception.arg_check(rows,int,sector.SECTOR_ROWS)
         # Map columns
-        self.cols = exception.arg_check(cols,int,sector.MAX_COLS)
+        self.cols = exception.arg_check(cols,int,sector.SECTOR_COLS)
         # Print map coordinates flag
         coords = exception.arg_check(coords,bool,False)
         # Map border

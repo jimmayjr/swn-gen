@@ -52,8 +52,8 @@ _SECTOR_IMAGE_WIDTH  = 1500 # px
 # Margins
 _SECTOR_TOP_MARGIN_RATIO    = 0.02
 _SECTOR_BOTTOM_MARGIN_RATIO = 0.02
-_SECTOR_LEFT_MARGIN_RATIO   = 0.04
-_SECTOR_RIGHT_MARGIN_RATIO  = 0.04
+_SECTOR_LEFT_MARGIN_RATIO   = 0.02
+_SECTOR_RIGHT_MARGIN_RATIO  = 0.02
 
 # Drawing specifications -------------------------------------------------------
 _IMAGE_BACKGROUND            = os.path.join(_DIR_PATH,'images/starfield.png')
@@ -135,7 +135,7 @@ class HexGrid(object):
         # Blank image before drawing
         if self.workingImage is not None:
             self.workingImage.close()
-        self.workingImage = pilimage.new("RGBA", (width,height))
+        self.workingImage = pilimage.new("RGBA", (self._width,self._height))
         # List of lines to draw between vertices
         gridLines = list()
         # For each row
@@ -148,28 +148,23 @@ class HexGrid(object):
                 # Offset centers by margins
                 (xc, yc) = (xc + self._leftMargin, yc + self._topMargin)
                 # Generate pairs of vertices to draw
-                for vertex in xrange(0,5):
+                for vertex in xrange(0,6):
                     # Get vertex positions in integer pixels
-                    (x0, y0) = flat_vertex(self._hexSize, vertex)
-                    (x1, y1) = flat_vertex(self._hexSize, vertex+1)
+                    (x0, y0) = hexutils.flat_vertex(self._hexSize, vertex)
+                    (x1, y1) = hexutils.flat_vertex(self._hexSize, vertex+1)
                     # Convert vertices to integer pixels
                     (x0, y0) = (int(x0), int(y0))
                     (x1, y1) = (int(x1), int(y1))
-                    # Offset vertices by margins
-                    (x0, y0) = (x0 + self._leftMargin, y0 + self._topMargin)
-                    (x1, y1) = (x1 + self._leftMargin, y1 + self._topMargin)
                     # Add pair of vertices to list if they aren't already
                     if ((x0+xc, y0+yc), (x1+xc, y1+yc)) not in gridLines:
                         gridLines.append(((x0+xc, y0+yc), (x1+xc, y1+yc)))
         # Create drawing image
-        drawingImage = pildraw.Draw(self._workingImage)
+        drawingImage = pildraw.Draw(self.workingImage)
         # Draw grid vertex lines
         fillColor = _GRID_COLOR
         lineWidth = int(_GRID_WIDTH_RATIO*self._width)
         for gl in gridLines:
-            drawingImage([gl[0], gl[1]], fill=fillColor, width=lineWidth)
-
-
+            drawingImage.line([gl[0], gl[1]], fill=fillColor, width=lineWidth)
 
 ## Hex map class.
 #
@@ -197,21 +192,56 @@ class HexMap(object):
         # Check arguments
         exception.arg_check(rows,        int)
         exception.arg_check(cols,        int)
-        exception.arg_check(width,       int)
-        exception.arg_check(height,      int)
+        self._width  = exception.arg_check(width,       int)
+        self._height = exception.arg_check(height,      int)
         exception.arg_check(hexSize,     float)
         exception.arg_check(gridWidth,   int)
         self._leftMargin = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
         self._topMargin  = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
-        # Create background image
 
-        # Create sector routes
+        # Working image. Leave as None until ready to draw.
+        self.workingImage = None
 
         # Create sector grid
         self.hexGrid = HexGrid(rows, cols, width, height, hexSize, gridWidth, 
                                leftMargin, topMargin)
 
+        # Create sector routes
+        #self.routes = Routes(
+
         # Create sector info
+
+    def draw(self):
+        # Blank image before drawing
+        if self.workingImage is not None:
+            self.workingImage.close()
+        self.workingImage = pilimage.new("RGBA", (self._width,self._height))
+        # Draw layers ----------------------------------------------------------
+        # Draw sector grid
+        self.hexGrid.draw()
+        # Draw sector routes
+        #self.routes.draw()
+        # Draw sector system info
+        #self.systemInfo.draw()
+
+        # Combine layers -------------------------------------------------------
+        # Paste sector grid
+        self.workingImage.paste(self.hexGrid.workingImage,mask=self.hexGrid.workingImage)
+        # Paste sector routes
+        #self.workingImage.paste(self.routes.workingImage,mask=self.hexGrid.workingImage)
+        # Paste sector system info
+        #self.workingImage.paste(self.systemInfo.workingImage,mask=self.hexGrid.workingImage)
+
+    def save(self, path):
+        # Check arguments
+        path = exception.arg_check(path, str)
+
+        # Draw image if it hasn't been
+        if self.workingImage is not None:
+            self.draw()
+
+        # Save image
+        self.workingImage.save(path)
 
 ## Hex system class.
 #
@@ -265,16 +295,42 @@ class SectorImage(object):
         leftMargin = self._leftMargin
         topMargin  = self._topMargin
 
-        # Create sector hex map
+        # Create sector main images
         self.hexMap = HexMap(rows, cols, width, height, hexSize, gridWidth, leftMargin, topMargin)
+        #self.infoTable = InfoTable()
+        #self.orbitMaps = OrbitMaps()
 
-    def draw_orbit_maps(self):
+        # Create ancillary sector info images
+        #self.corporations
+        #self.religions
+
+    def draw_sector(self):
+        # Draw layers ----------------------------------------------------------
+        self.hexMap.draw()
+        #self.infoTable.draw()
+        #self.orbitMaps.draw()
+
+        # Determine width
+
+        # Combine layers -------------------------------------------------------
+
+    ## Save sector hex map.
+    def save_sector_map(self, path):
+        # Check arguments
+        path = exception.arg_check(path, str)
+        # Save hexmap
+        self.hexMap.save(path)
+
+    ## Save sector info table.
+    def save_sector_info(self):
         raise Exception('Not implemented yet.')
 
-    def draw_sector_map(self):
+    ## Save sector orbit maps.
+    def save_sector_orbits(self):
         raise Exception('Not implemented yet.')
 
-    def draw_sector_info(self):
+    ## Save combined sector hex map, info table, and orbit maps.
+    def save_sector_combined(self):
         raise Exception('Not implemented yet.')
 
     ## Set image parameters.

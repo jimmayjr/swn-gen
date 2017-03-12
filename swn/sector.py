@@ -14,8 +14,8 @@ import orbitalobject
 import system
 import text
 
-MAX_ROWS = 10
-MAX_COLS = 8
+SECTOR_ROWS = 10
+SECTOR_COLS = 8
 
 # Sector class -----------------------------------------------------------------
 class Sector(object):
@@ -33,7 +33,7 @@ class Sector(object):
         self.highlights = list()
         self.routes     = list()
         # Images
-        self.images = image.SectorImage(MAX_ROWS, MAX_COLS)
+        self.images = image.SectorImage(SECTOR_ROWS, SECTOR_COLS)
 
     ## Add a blank system.
     #
@@ -49,7 +49,7 @@ class Sector(object):
 
     ## Draw sector
     def draw_sector(self):
-        self.images.draw_sector_map()
+        self.images.draw_sector()
 
 
     ## Hex empty check.
@@ -254,8 +254,8 @@ class Sector(object):
         # Create hexmap
         hexMap = text.HexMap(title  = self.name + ' - ' + 'Sector Map',
                              size   = text.SMALL_MAP,
-                             rows   = MAX_ROWS,
-                             cols   = MAX_COLS,
+                             rows   = SECTOR_ROWS,
+                             cols   = SECTOR_COLS,
                              coords = coords)
         # Add systems to map
         sIndex = 1
@@ -289,12 +289,12 @@ class Sector(object):
         sumDistAll = list()
         sumDistAllPos = list()
         # For each hex row
-        rowList = range(0,MAX_ROWS)
+        rowList = range(0,SECTOR_ROWS)
         # Shuffle rowList to not favor any specific row
         np.random.shuffle(rowList)
         for row in rowList:
             # For each hex column
-            colList =range(0,MAX_COLS)
+            colList =range(0,SECTOR_COLS)
             # Shuffle colList to not favor any specific column
             np.random.shuffle(colList)
             for col in colList:
