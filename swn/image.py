@@ -48,6 +48,7 @@ _COLORS['themedarkred'] = (150,0,0,255)
 # Sector Defaults --------------------------------------------------------------
 # Size
 _SECTOR_IMAGE_WIDTH  = 1500 # px
+_SECTOR_IMAGE_SCALE  = 3    # Scale to increase image size for antialiasing
 
 # Margins
 _SECTOR_TOP_MARGIN_RATIO    = 0.02
@@ -165,6 +166,7 @@ class HexGrid(object):
         lineWidth = int(_GRID_WIDTH_RATIO*self._width)
         for gl in gridLines:
             drawingImage.line([gl[0], gl[1]], fill=fillColor, width=lineWidth)
+        print(len(gridLines))
 
 ## Hex map class.
 #
@@ -237,11 +239,16 @@ class HexMap(object):
         path = exception.arg_check(path, str)
 
         # Draw image if it hasn't been
-        if self.workingImage is not None:
+        if self.workingImage is None:
             self.draw()
 
+        # Resize/scale down with antialiasing to smooth jagged lines
+        workingImageResize = self.workingImage.resize((self._width/_SECTOR_IMAGE_SCALE, 
+                                                       self._height/_SECTOR_IMAGE_SCALE),
+                                                   pilimage.LANCZOS)
+
         # Save image
-        self.workingImage.save(path)
+        workingImageResize.save(path)
 
 ## Hex system class.
 #
@@ -253,7 +260,7 @@ class HexSystem(object):
     #  @param hexSize The hex size to draw the system in [px].
     def __init__(self,
                  hexSize):
-        pass
+        raise Exception('Not implemented yet.')
 
 
 ## Sector image class.
@@ -280,7 +287,7 @@ class SectorImage(object):
         # Check arguments
         self._rows        = exception.arg_check(rows,              int)
         self._cols        = exception.arg_check(cols,              int)
-        width             = exception.arg_check(width,             int,   _SECTOR_IMAGE_WIDTH)
+        width             = exception.arg_check(width,             int,   _SECTOR_IMAGE_WIDTH*_SECTOR_IMAGE_SCALE)
         topMarginRatio    = exception.arg_check(topMarginRatio,    float, _SECTOR_TOP_MARGIN_RATIO)
         bottomMarginRatio = exception.arg_check(bottomMarginRatio, float, _SECTOR_BOTTOM_MARGIN_RATIO)
         leftMarginRatio   = exception.arg_check(leftMarginRatio,   float, _SECTOR_LEFT_MARGIN_RATIO)

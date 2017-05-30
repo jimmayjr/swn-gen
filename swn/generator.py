@@ -50,7 +50,7 @@ class Generator(object):
         return(newCorporation)
 
     def load(self):
-        pass
+        raise Exception('Not implemented yet.')
 
     def moons(self,d20):
         numSmallMoons  = orbitalobject.TABLE_SMALL_MOONS[d20]
@@ -85,7 +85,7 @@ class Generator(object):
         return(orbitalobject.TABLE_MINOR_RINGS[d20])
 
     def save(self,fName):
-        pass
+        raise Exception('Not implemented yet.')
 
     def sector(self,
                groupingMethod = GROUPING_METHOD):
