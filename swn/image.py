@@ -129,16 +129,8 @@ class HexGrid(object):
         self._leftMargin = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
         self._topMargin  = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
         
-        # Working image. Leave as None until ready to draw.
-        self.workingImage = None
-
-    def draw(self):
-        # Blank image before drawing
-        if self.workingImage is not None:
-            self.workingImage.close()
-        self.workingImage = pilimage.new("RGBA", (self._width,self._height))
-        # List of lines to draw between vertices
-        gridLines = list()
+        # Set of lines to draw between vertices
+        self._gridLines = list()
         # For each row
         for row in xrange(self._rows):
             # For each column
@@ -157,16 +149,26 @@ class HexGrid(object):
                     (x0, y0) = (int(x0), int(y0))
                     (x1, y1) = (int(x1), int(y1))
                     # Add pair of vertices to list if they aren't already
-                    if ((x0+xc, y0+yc), (x1+xc, y1+yc)) not in gridLines:
-                        gridLines.append(((x0+xc, y0+yc), (x1+xc, y1+yc)))
+                    if (((x0+xc, y0+yc), (x1+xc, y1+yc)) not in self._gridLines) and \
+                       (((x1+xc, y1+yc), (x0+xc, y0+yc)) not in self._gridLines):
+                        self._gridLines.append(((x0+xc, y0+yc), (x1+xc, y1+yc)))
+
+        # Working image. Leave as None until ready to draw.
+        self.workingImage = None
+
+    def draw(self):
+        # Blank image before drawing
+        if self.workingImage is not None:
+            self.workingImage.close()
+        self.workingImage = pilimage.new("RGBA", (self._width,self._height))
+        
         # Create drawing image
         drawingImage = pildraw.Draw(self.workingImage)
         # Draw grid vertex lines
         fillColor = _GRID_COLOR
         lineWidth = int(_GRID_WIDTH_RATIO*self._width)
-        for gl in gridLines:
+        for gl in self._gridLines:
             drawingImage.line([gl[0], gl[1]], fill=fillColor, width=lineWidth)
-        print(len(gridLines))
 
 ## Hex map class.
 #
