@@ -92,7 +92,11 @@ class Generator(object):
         # Generate random sector name
         newsectorName = self.name_sector()
         # Create new sector object
-        newSector = sector.Sector(newsectorName)
+        newSector = sector.Sector(newsectorName,
+                                  sector.SECTOR_MAJOR_ROW,
+                                  sector.SECTOR_MAJOR_COL,
+                                  sector.SECTOR_ROWS,
+                                  sector.SECTOR_COLS)
         # Generate number of stars
         numStars = random.dice_roll(1,10,20)
         # Create list of names used

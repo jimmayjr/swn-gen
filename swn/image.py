@@ -102,6 +102,8 @@ _LIST_FONT_FILENAME          = _FONT_FILENAME
 class HexGrid(object):
     ## Hex grid class constructor.
     #  @param self       The object pointer.
+    #  @param majorRow   Major row of sector.
+    #  @param majorCol   Major column of sector.
     #  @param rows       Number or rows in the grid.
     #  @param cols       Number of columns in the grid.
     #  @param width      Width of the grid image [px].
@@ -111,6 +113,8 @@ class HexGrid(object):
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
     def __init__(self,
+                 majorRow,
+                 majorCol,
                  rows,
                  cols,
                  width,
@@ -120,14 +124,91 @@ class HexGrid(object):
                  leftMargin = None,
                  topMargin  = None):
         # Check arguments
-        self._rows       = exception.arg_check(rows,       int)
-        self._cols       = exception.arg_check(cols,       int)
+        self._majorRow = exception.arg_check(majorRow,   int)
+        self._majorCol = exception.arg_check(majorCol,   int)
+        self._rows     = exception.arg_check(rows,       int)
+        self._cols     = exception.arg_check(cols,       int)
+        width          = exception.arg_check(width,      int)
+        height         = exception.arg_check(height,     int)
+        hexSize        = exception.arg_check(hexSize,    float)
+        gridWidth      = exception.arg_check(gridWidth,  int)
+        leftMargin     = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
+        topMargin      = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+
+        # Set grid size.
+        self.resize(width, height, hexSize, gridWidth, leftMargin, topMargin)
+
+        # Working image. Leave as None until ready to draw.
+        self.workingImage = None
+
+    ## Draw hex grid.
+    #  @param self The object pointer.
+    def draw(self):
+        # Blank image before drawing
+        if self.workingImage is not None:
+            self.workingImage.close()
+        self.workingImage = pilimage.new("RGBA", (self._width,self._height))
+        
+        # Create drawing image
+        drawingImage = pildraw.Draw(self.workingImage)
+        # Draw grid vertex lines
+        fillColor = _GRID_COLOR
+        lineWidth = int(_GRID_WIDTH_RATIO*self._width)
+        for gl in self._gridLines:
+            drawingImage.line([gl[0], gl[1]], fill=fillColor, width=lineWidth)
+        # Draw hex number text
+        #    For each row
+        for row in xrange(self._rows):
+            # For each column
+            for col in xrange(self._cols):
+                # Center of hex in integer pixels
+                (xc, yc) = hexutils.odd_q_center(self._hexSize, row, col)
+                (xc, yc) = (int(xc), int(yc))
+                # Offset centers by margins
+                (xc, yc) = (xc + self._leftMargin, yc + self._topMargin)
+                # Hex number text
+                hexNum = '{mCol}{col}{mRow}{row}'.format(mCol = self._majorCol,
+                                                         col  = col,
+                                                         mRow = self._majorRow,
+                                                         row  = row)
+                # Hex number text size
+                w, h = drawingImage.textsize(hexNum, font=self._font)
+                # Draw hex number text
+                drawingImage.text((xc-w/2, 
+                                   yc+self._hexHeight/2 - h - _HEX_NUM_MARGIN_RATIO*self._hexHeight),
+                                  hexNum, 
+                                  fill=_HEX_FONT_COLOR, 
+                                  font=self._font)
+
+    ## Resize grid.
+    #  @param self       The object pointer.
+    #  @param width      Width of the grid image [px].
+    #  @param height     Height of the grid image [px].
+    #  @param hexSize    Size of the grid hexes [px].
+    #  @param gridWidth  Width of the grid lines [px].
+    #  @param leftMargin Left margin of the grid image [px].
+    #  @param topMargin  Top margin of the grid image [px].
+    def resize(self,
+               width,
+               height,
+               hexSize,
+               gridWidth,
+               leftMargin,
+               topMargin):
+        # Check arguments
         self._width      = exception.arg_check(width,      int)
         self._height     = exception.arg_check(height,     int)
         self._hexSize    = exception.arg_check(hexSize,    float)
         self._gridWidth  = exception.arg_check(gridWidth,  int)
-        self._leftMargin = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
-        self._topMargin  = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+        self._leftMargin = exception.arg_check(leftMargin, int)
+        self._topMargin  = exception.arg_check(topMargin,  int)
+
+        # Calculate hex height
+        self._hexHeight = hexutils.flat_height(hexSize)
+
+        # Hex font
+        fontSize = int(_HEX_FONT_SIZE_RATIO*hexutils.flat_height(hexSize))
+        self._font = pilfont.truetype(_FONT_FILENAME, fontSize, encoding="unic")
         
         # Set of lines to draw between vertices
         self._gridLines = list()
@@ -153,68 +234,74 @@ class HexGrid(object):
                        (((x1+xc, y1+yc), (x0+xc, y0+yc)) not in self._gridLines):
                         self._gridLines.append(((x0+xc, y0+yc), (x1+xc, y1+yc)))
 
-        # Working image. Leave as None until ready to draw.
-        self.workingImage = None
-
-    def draw(self):
-        # Blank image before drawing
-        if self.workingImage is not None:
-            self.workingImage.close()
-        self.workingImage = pilimage.new("RGBA", (self._width,self._height))
-        
-        # Create drawing image
-        drawingImage = pildraw.Draw(self.workingImage)
-        # Draw grid vertex lines
-        fillColor = _GRID_COLOR
-        lineWidth = int(_GRID_WIDTH_RATIO*self._width)
-        for gl in self._gridLines:
-            drawingImage.line([gl[0], gl[1]], fill=fillColor, width=lineWidth)
-
 ## Hex map class.
 #
-#  The hex maps class is used to create a sector hex map.
+#  The hex map class is used to create a sector hex map.
 class HexMap(object):
     ## Hex sector class constructor.
-    #  @param rows    Number of hex rows.
-    #  @param cols    Number of hex columns.
-    #  @param self    The object pointer.
-    #  @param width   The width of the sector image [px].
-    #  @param height  The height of the sector image [px].
-    #  @param hexSize The hex size to draw the system in [px].
+    #  @param self       The object pointer.
+    #  @param majorRow   Major row of sector.
+    #  @param majorCol   Major column of sector.
+    #  @param rows       Number of hex rows (odd-q).
+    #  @param cols       Number of hex columns (odd-q).
+    #  @param width      The width of the sector image [px].
+    #  @param height     The height of the sector image [px].
+    #  @param hexSize    The hex size to draw the system in [px].
     #  @param gridWidth  Width of the grid lines [px].
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
     def __init__(self,
+                 majorRow,
+                 majorCol,
                  rows,
                  cols,
                  width,
                  height,
                  hexSize,
                  gridWidth,
-                 leftMargin,
-                 topMargin):
+                 leftMargin = None,
+                 topMargin  = None):
         # Check arguments
-        exception.arg_check(rows,        int)
-        exception.arg_check(cols,        int)
-        self._width  = exception.arg_check(width,       int)
-        self._height = exception.arg_check(height,      int)
-        exception.arg_check(hexSize,     float)
-        exception.arg_check(gridWidth,   int)
-        self._leftMargin = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
-        self._topMargin  = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+        exception.arg_check(majorRow,   int)
+        exception.arg_check(majorCol,   int)
+        exception.arg_check(rows,       int)
+        exception.arg_check(cols,       int)
+        exception.arg_check(width,      int)
+        exception.arg_check(height,     int)
+        exception.arg_check(hexSize,    float)
+        exception.arg_check(gridWidth,  int)
+        exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
+        exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+
+        # Set map size.
+        self._set_params(width, height, leftMargin, topMargin)
 
         # Working image. Leave as None until ready to draw.
         self.workingImage = None
 
         # Create sector grid
-        self.hexGrid = HexGrid(rows, cols, width, height, hexSize, gridWidth, 
-                               leftMargin, topMargin)
+        self.hexGrid = HexGrid(majorRow, majorCol, rows, cols, width, height, 
+                               hexSize, gridWidth, leftMargin, topMargin)
 
         # Create sector routes
         #self.routes = Routes(
 
         # Create sector info
 
+    ## Set hex map parameters.
+    #  @param self       The object pointer.
+    #  @param width      Hex map width in pixels.
+    #  @param height     Hex map height in pixels.
+    #  @param leftMargin Left margin in pixels.
+    #  @param topMargin  Top margin in pixels.
+    def _set_params(self, width, height, leftMargin, topMargin):
+        # Check arguments
+        self._width      = exception.arg_check(width,      int)
+        self._height     = exception.arg_check(height,     int)
+        self._leftMargin = exception.arg_check(leftMargin, int)
+        self._topMargin  = exception.arg_check(topMargin,  int)
+
+    ## Draw hex map.
     def draw(self):
         # Blank image before drawing
         if self.workingImage is not None:
@@ -231,11 +318,32 @@ class HexMap(object):
         # Combine layers -------------------------------------------------------
         # Paste sector grid
         self.workingImage.paste(self.hexGrid.workingImage,mask=self.hexGrid.workingImage)
+        # Paste sector system info backgrounds
+        #for each hex
+        #self.workingImage.paste(self.systemInfo.bgWorkingImage,mask=self.hexGrid.workingImage)
         # Paste sector routes
         #self.workingImage.paste(self.routes.workingImage,mask=self.hexGrid.workingImage)
-        # Paste sector system info
+        # Paste sector system info foregrounds
+        #for each hex
         #self.workingImage.paste(self.systemInfo.workingImage,mask=self.hexGrid.workingImage)
 
+    ## Set hex map size.
+    def resize(self, width, height, leftMargin, topMargin):
+        # Check arguments
+        width      = exception.arg_check(width,      int)
+        height     = exception.arg_check(height,     int)
+        leftMargin = exception.arg_check(leftMargin, int)
+        topMargin  = exception.arg_check(topMargin,  int)
+
+        # Set map size.
+        self._set_params(width, height, leftMargin, topMargin)
+
+        # Set grid size.
+        self.hexGrid.resize(hexSize)
+
+        # Set hex info sizes.
+
+    ## Save hex map to file.
     def save(self, path):
         # Check arguments
         path = exception.arg_check(path, str)
@@ -247,22 +355,38 @@ class HexMap(object):
         # Resize/scale down with antialiasing to smooth jagged lines
         workingImageResize = self.workingImage.resize((self._width/_SECTOR_IMAGE_SCALE, 
                                                        self._height/_SECTOR_IMAGE_SCALE),
-                                                   pilimage.LANCZOS)
+                                                      pilimage.LANCZOS)
 
         # Save image
         workingImageResize.save(path)
 
-## Hex system class.
+## Hex class.
 #
-#  The hex system class is used to create imagery for a star system to display 
-#  in a sector hex grid.
-class HexSystem(object):
-    ## Hex system class constructor.
+#  The hex class is used to create imagery for a hex to display in a
+#  sector hex grid.
+class Hex(object):
+    ## Hex class constructor.
     #  @param self    The object pointer.
     #  @param hexSize The hex size to draw the system in [px].
     def __init__(self,
                  hexSize):
         raise Exception('Not implemented yet.')
+        # Check arguments.
+        hexSize = exception.arg_check(hexSize, float)
+
+        # Set hex size.
+        resize(hexSize)
+
+        # Working image. Leave as None until ready to draw.
+        self.bgWorkingImage = None # Background
+        self.fgWorkingImage = None # Foreground
+
+    ## Resize hex.
+    #  @param self    The object pointer.
+    #  @param hexSize The hex size to draw the system in [px].
+    def resize(self, hexSize):
+        self._hexSize = exception.arg_check(hexSize, float)
+
 
 
 ## Sector image class.
@@ -270,15 +394,19 @@ class HexSystem(object):
 #  The sector image class is used to create images of an SWN sector.
 class SectorImage(object):
     ## Sector image class constructor.
-    #  @param self The object pointer.
-    #  @param rows              Number of hex rows.
-    #  @param cols              Number of hex columns.
+    #  @param self              The object pointer.
+    #  @param majorRow          Major row of sector.
+    #  @param majorCol          Major column of sector.
+    #  @param rows              Number of hex rows (odd-q).
+    #  @param cols              Number of hex columns (odd-q).
     #  @param width             Image width in pixels.
-    #  @param topMarginRatio    Top margin ratio relative to height.
-    #  @param bottomMarginRatio Bottom margin ratio relative to height.
+    #  @param topMarginRatio    Top margin ratio relative to width.
+    #  @param bottomMarginRatio Bottom margin ratio relative to width.
     #  @param leftMarginRatio   Left margin ratio relative to width.
     #  @param rightMarginRatio  Right margin ratio relative to width.
     def __init__(self,
+                 majorRow,
+                 majorCol,
                  rows,
                  cols,
                  width             = None,
@@ -287,6 +415,8 @@ class SectorImage(object):
                  leftMarginRatio   = None,
                  rightMarginRatio  = None):
         # Check arguments
+        self._majorRow    = exception.arg_check(majorRow,          int)
+        self._majorCol    = exception.arg_check(majorRow,          int)
         self._rows        = exception.arg_check(rows,              int)
         self._cols        = exception.arg_check(cols,              int)
         width             = exception.arg_check(width,             int,   _SECTOR_IMAGE_WIDTH*_SECTOR_IMAGE_SCALE)
@@ -295,8 +425,8 @@ class SectorImage(object):
         leftMarginRatio   = exception.arg_check(leftMarginRatio,   float, _SECTOR_LEFT_MARGIN_RATIO)
         rightMarginRatio  = exception.arg_check(rightMarginRatio,  float, _SECTOR_RIGHT_MARGIN_RATIO)
 
-        # Set sector map parameters
-        self.set_params(width, topMarginRatio, bottomMarginRatio, leftMarginRatio, rightMarginRatio)
+        # Set sector map size
+        self._set_params(width, topMarginRatio, bottomMarginRatio, leftMarginRatio, rightMarginRatio)
         width      = self._size[0]
         height     = self._size[1]
         hexSize    = self._hexSize
@@ -305,42 +435,22 @@ class SectorImage(object):
         topMargin  = self._topMargin
 
         # Create sector main images
-        self.hexMap = HexMap(rows, cols, width, height, hexSize, gridWidth, leftMargin, topMargin)
+        self.hexMap = HexMap(self._majorRow, 
+                             self._majorCol, 
+                             rows, 
+                             cols, 
+                             width, 
+                             height, 
+                             hexSize, 
+                             gridWidth, 
+                             leftMargin, 
+                             topMargin)
         #self.infoTable = InfoTable()
         #self.orbitMaps = OrbitMaps()
 
         # Create ancillary sector info images
         #self.corporations
         #self.religions
-
-    def draw_sector(self):
-        # Draw layers ----------------------------------------------------------
-        self.hexMap.draw()
-        #self.infoTable.draw()
-        #self.orbitMaps.draw()
-
-        # Determine width
-
-        # Combine layers -------------------------------------------------------
-
-    ## Save sector hex map.
-    def save_sector_map(self, path):
-        # Check arguments
-        path = exception.arg_check(path, str)
-        # Save hexmap
-        self.hexMap.save(path)
-
-    ## Save sector info table.
-    def save_sector_info(self):
-        raise Exception('Not implemented yet.')
-
-    ## Save sector orbit maps.
-    def save_sector_orbits(self):
-        raise Exception('Not implemented yet.')
-
-    ## Save combined sector hex map, info table, and orbit maps.
-    def save_sector_combined(self):
-        raise Exception('Not implemented yet.')
 
     ## Set image parameters.
     #  @param self              The object pointer.
@@ -349,12 +459,12 @@ class SectorImage(object):
     #  @param bottomMarginRatio Bottom margin ratio relative to height.
     #  @param leftMarginRatio   Left margin ratio relative to width.
     #  @param rightMarginRatio  Right margin ratio relative to width.
-    def set_params(self,
-                   width             = None,
-                   topMarginRatio    = None,
-                   bottomMarginRatio = None,
-                   leftMarginRatio   = None,
-                   rightMarginRatio  = None):
+    def _set_params(self,
+                    width             = None,
+                    topMarginRatio    = None,
+                    bottomMarginRatio = None,
+                    leftMarginRatio   = None,
+                    rightMarginRatio  = None):
         # Check arguments
         width             = exception.arg_check(width,             int,   _SECTOR_IMAGE_WIDTH)
         topMarginRatio    = exception.arg_check(topMarginRatio,    float, _SECTOR_TOP_MARGIN_RATIO)
@@ -433,3 +543,67 @@ class SectorImage(object):
         self._systemNameFont   = systemNameFont
         self._infoFont         = infoFont
         self._infoMargin       = infoMargin
+
+    def draw_sector(self):
+        # Draw layers ----------------------------------------------------------
+        self.hexMap.draw()
+        #self.infoTable.draw()
+        #self.orbitMaps.draw()
+
+        # Determine width
+
+        # Combine layers -------------------------------------------------------
+
+    ## Resize images.
+    #  @param self              The object pointer.
+    #  @param width             Image width in pixels.
+    #  @param topMarginRatio    Top margin ratio relative to height.
+    #  @param bottomMarginRatio Bottom margin ratio relative to height.
+    #  @param leftMarginRatio   Left margin ratio relative to width.
+    #  @param rightMarginRatio  Right margin ratio relative to width.
+    def resize(self,
+               width             = None,
+               topMarginRatio    = None,
+               bottomMarginRatio = None,
+               leftMarginRatio   = None,
+               rightMarginRatio  = None):
+        # Check arguments
+        width             = exception.arg_check(width,             int,   _SECTOR_IMAGE_WIDTH)
+        topMarginRatio    = exception.arg_check(topMarginRatio,    float, _SECTOR_TOP_MARGIN_RATIO)
+        bottomMarginRatio = exception.arg_check(bottomMarginRatio, float, _SECTOR_BOTTOM_MARGIN_RATIO)
+        leftMarginRatio   = exception.arg_check(leftMarginRatio,   float, _SECTOR_LEFT_MARGIN_RATIO)
+        rightMarginRatio  = exception.arg_check(rightMarginRatio,  float, _SECTOR_RIGHT_MARGIN_RATIO)
+
+        # Set sector map size
+        self._set_params(width, topMarginRatio, bottomMarginRatio, leftMarginRatio, rightMarginRatio)
+        width      = self._size[0]
+        height     = self._size[1]
+        hexSize    = self._hexSize
+        gridWidth  = self._gridWidth
+        leftMargin = self._leftMargin
+        topMargin  = self._topMargin
+
+        # Resize sector main images
+        self.hexMap.resize(hexSize)
+        #self.infoTable.resize()
+        #self.orbitMaps.resize()
+
+
+    ## Save sector hex map.
+    def save_sector_map(self, path):
+        # Check arguments
+        path = exception.arg_check(path, str)
+        # Save hexmap
+        self.hexMap.save(path)
+
+    ## Save sector info table.
+    def save_sector_info(self):
+        raise Exception('Not implemented yet.')
+
+    ## Save sector orbit maps.
+    def save_sector_orbits(self):
+        raise Exception('Not implemented yet.')
+
+    ## Save combined sector hex map, info table, and orbit maps.
+    def save_sector_combined(self):
+        raise Exception('Not implemented yet.')

@@ -14,15 +14,35 @@ import orbitalobject
 import system
 import text
 
+
+SECTOR_MAJOR_ROW = 0
+SECTOR_MAJOR_COL = 0
 SECTOR_ROWS = 10
 SECTOR_COLS = 8
 
 # Sector class -----------------------------------------------------------------
+## Sector class.
+#
+# Class to hold a SWN sector.
 class Sector(object):
+    ## Sector constructor.
+    #  @param self     The object pointer.
+    #  @param majorRow Major row of sector.
+    #  @param majorCol Major column of sector.
+    #  @param rows     Number of rows in sector.
+    #  @param cols     Number of columns in sector.
     def __init__(self,
-                 name):
+                 name,
+                 majorRow = None,
+                 majorCol = None,
+                 rows     = None,
+                 cols     = None):
         # General information
-        self.name = exception.arg_check(name,str,argDefault='Default Name')
+        self.name     = exception.arg_check(name,     str, 'Default Name')
+        self.majorRow = exception.arg_check(majorRow, int, SECTOR_MAJOR_ROW)
+        self.majorCol = exception.arg_check(majorCol, int, SECTOR_MAJOR_COL)
+        self._rows    = exception.arg_check(rows,     int, SECTOR_ROWS)
+        self._cols    = exception.arg_check(cols,     int, SECTOR_COLS)
         # Roll information
         self.corporations = list()
         self.heresies     = list()
@@ -33,7 +53,10 @@ class Sector(object):
         self.highlights = list()
         self.routes     = list()
         # Images
-        self.images = image.SectorImage(SECTOR_ROWS, SECTOR_COLS)
+        self.images = image.SectorImage(self.majorRow,
+                                        self.majorCol,
+                                        self._rows,
+                                        self._cols)
 
     ## Add a blank system.
     #
