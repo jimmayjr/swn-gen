@@ -260,7 +260,8 @@ class HexMap(object):
                  hexSize,
                  gridWidth,
                  leftMargin = None,
-                 topMargin  = None):
+                 topMargin  = None,
+                 background = None):
         # Check arguments
         exception.arg_check(majorRow,   int)
         exception.arg_check(majorCol,   int)
@@ -272,6 +273,7 @@ class HexMap(object):
         exception.arg_check(gridWidth,  int)
         exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
         exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+        self._background = exception.arg_check(background, pilimage.Image, pilimage.new("RGBA", (width,height), color=(0,0,0,255)))
 
         # Set map size.
         self._set_params(width, height, leftMargin, topMargin)
@@ -306,7 +308,7 @@ class HexMap(object):
         # Blank image before drawing
         if self.workingImage is not None:
             self.workingImage.close()
-        self.workingImage = pilimage.new("RGBA", (self._width,self._height))
+        self.workingImage = pilimage.new("RGBA", (self._width, self._height))
         # Draw layers ----------------------------------------------------------
         # Draw sector grid
         self.hexGrid.draw()
@@ -352,13 +354,35 @@ class HexMap(object):
         if self.workingImage is None:
             self.draw()
 
+        # Resize background image.
+        # Get scale of actual image to background image.
+        bgScale  = float(self._height)/float(self._background.height)
+        # Calculate width assuming resizing background image height to actual 
+        # image height.
+        bgWidth  = int(math.ceil(bgScale*self._background.width))
+        # Calculate number of times background image is requred to tile to fit
+        # width.
+        bgTile   = int(math.ceil(float(self._width)/float(bgWidth)))
+        # Resize background image to match actual image height.
+        bgResize = self._background.resize((bgWidth,self._height), pilimage.LANCZOS)
+
+        # Create image to save
+        saveImage = pilimage.new('RGBA', (self._width, self._height))
+
+        # Paste background
+        for tile in xrange(bgTile):
+            saveImage.paste(bgResize, box=((tile)*self._width,0), mask=bgResize)
+
+        # Paste working image
+        saveImage.paste(self.workingImage, box=(0,0), mask=self.workingImage)
+
         # Resize/scale down with antialiasing to smooth jagged lines
-        workingImageResize = self.workingImage.resize((self._width/_SECTOR_IMAGE_SCALE, 
-                                                       self._height/_SECTOR_IMAGE_SCALE),
-                                                      pilimage.LANCZOS)
+        saveImage = saveImage.resize((self._width/_SECTOR_IMAGE_SCALE, 
+                                      self._height/_SECTOR_IMAGE_SCALE),
+                                     pilimage.LANCZOS)
 
         # Save image
-        workingImageResize.save(path)
+        saveImage.save(path)
 
 ## Hex class.
 #
@@ -434,6 +458,10 @@ class SectorImage(object):
         leftMargin = self._leftMargin
         topMargin  = self._topMargin
 
+        # Load background starfield image
+        # Darken background image
+        self._background = pilenhance.Brightness(pilimage.open(_IMAGE_BACKGROUND).convert('RGBA')).enhance(_IMAGE_BACKGROUND_BRIGHTNESS)
+
         # Create sector main images
         self.hexMap = HexMap(self._majorRow, 
                              self._majorCol, 
@@ -444,7 +472,8 @@ class SectorImage(object):
                              hexSize, 
                              gridWidth, 
                              leftMargin, 
-                             topMargin)
+                             topMargin,
+                             self._background)
         #self.infoTable = InfoTable()
         #self.orbitMaps = OrbitMaps()
 
