@@ -1,4 +1,5 @@
-__all__ = ['corporation',
+__all__ = ['color',
+           'corporation',
            'exception',
            'generator',
            'hexutils',
@@ -12,6 +13,7 @@ __all__ = ['corporation',
            'system',
            'text',
            'world']
+import color
 import corporation
 import exception
 import generator

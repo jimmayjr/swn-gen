@@ -10,6 +10,7 @@ import PIL.ImageFilter as pilfilter
 import PIL.ImageFont as pilfont
 import scipy.interpolate as spi
 
+import color
 import exception
 import hexutils
 
@@ -63,7 +64,7 @@ _ROUTE_WIDTH_RATIO           = 1./10.
 _ROUTE_BLUR_SIZE_RATIO       = 0.6
 _ROUTE_COLOR                 = (179,235,250,100)
 _GRID_WIDTH_RATIO            = 3./1500.
-_GRID_COLOR                  = (100,100,100,255)
+_GRID_COLOR                  = color.THEME_GREY
 _GRID_ALPHA                  = 200
 _STAR_LARGE_DIAMETER_RATIO   = 1./4.
 _STAR_MEDIUM_DIAMETER_RATIO  = 1./5.
@@ -112,6 +113,7 @@ class HexGrid(object):
     #  @param gridWidth  Width of the grid lines [px].
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
+    #  @param gridColor  Color of gridlines.
     def __init__(self,
                  majorRow,
                  majorCol,
@@ -122,21 +124,29 @@ class HexGrid(object):
                  hexSize,
                  gridWidth,
                  leftMargin = None,
-                 topMargin  = None):
+                 topMargin  = None,
+                 gridColor  = None):
         # Check arguments
-        self._majorRow = exception.arg_check(majorRow,   int)
-        self._majorCol = exception.arg_check(majorCol,   int)
-        self._rows     = exception.arg_check(rows,       int)
-        self._cols     = exception.arg_check(cols,       int)
-        width          = exception.arg_check(width,      int)
-        height         = exception.arg_check(height,     int)
-        hexSize        = exception.arg_check(hexSize,    float)
-        gridWidth      = exception.arg_check(gridWidth,  int)
-        leftMargin     = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
-        topMargin      = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+        self._majorRow   = exception.arg_check(majorRow,   int)
+        self._majorCol   = exception.arg_check(majorCol,   int)
+        self._rows       = exception.arg_check(rows,       int)
+        self._cols       = exception.arg_check(cols,       int)
+        self._width      = exception.arg_check(width,      int)
+        self._height     = exception.arg_check(height,     int)
+        self._hexSize    = exception.arg_check(hexSize,    float)
+        self._gridWidth  = exception.arg_check(gridWidth,  int)
+        self._leftMargin = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
+        self._topMargin  = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+        self._gridColor  = exception.arg_check(gridColor, color.Color, _GRID_COLOR)
 
-        # Set grid size.
-        self.resize(width, height, hexSize, gridWidth, leftMargin, topMargin)
+        # Set grid parameters.
+        self.set_parameters(self._width, 
+                            self._height, 
+                            self._hexSize, 
+                            self._gridWidth, 
+                            self._leftMargin, 
+                            self._topMargin,
+                            self._gridColor)
 
         # Working image. Leave as None until ready to draw.
         self.workingImage = None
@@ -152,7 +162,7 @@ class HexGrid(object):
         # Create drawing image
         drawingImage = pildraw.Draw(self.workingImage)
         # Draw grid vertex lines
-        fillColor = _GRID_COLOR
+        fillColor = self._gridColor.rgba(255)
         lineWidth = int(_GRID_WIDTH_RATIO*self._width)
         for gl in self._gridLines:
             drawingImage.line([gl[0], gl[1]], fill=fillColor, width=lineWidth)
@@ -180,7 +190,7 @@ class HexGrid(object):
                                   fill=_HEX_FONT_COLOR, 
                                   font=self._font)
 
-    ## Resize grid.
+    ## Internally or externally set grid parameters.
     #  @param self       The object pointer.
     #  @param width      Width of the grid image [px].
     #  @param height     Height of the grid image [px].
@@ -188,20 +198,23 @@ class HexGrid(object):
     #  @param gridWidth  Width of the grid lines [px].
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
-    def resize(self,
-               width,
-               height,
-               hexSize,
-               gridWidth,
-               leftMargin,
-               topMargin):
+    #  @param gridColor  Color of gridlines.
+    def set_parameters(self,
+                       width      = None,
+                       height     = None,
+                       hexSize    = None,
+                       gridWidth  = None,
+                       leftMargin = None,
+                       topMargin  = None,
+                       gridColor  = None):
         # Check arguments
-        self._width      = exception.arg_check(width,      int)
-        self._height     = exception.arg_check(height,     int)
-        self._hexSize    = exception.arg_check(hexSize,    float)
-        self._gridWidth  = exception.arg_check(gridWidth,  int)
-        self._leftMargin = exception.arg_check(leftMargin, int)
-        self._topMargin  = exception.arg_check(topMargin,  int)
+        self._width      = exception.arg_check(width,      int,         self._width)
+        self._height     = exception.arg_check(height,     int,         self._height)
+        self._hexSize    = exception.arg_check(hexSize,    float,       self._hexSize)
+        self._gridWidth  = exception.arg_check(gridWidth,  int,         self._gridWidth)
+        self._leftMargin = exception.arg_check(leftMargin, int,         self._leftMargin)
+        self._topMargin  = exception.arg_check(topMargin,  int,         self._topMargin)
+        self._gridColor  = exception.arg_check(gridColor,  color.Color, self._gridColor)
 
         # Calculate hex height
         self._hexHeight = hexutils.flat_height(hexSize)
@@ -250,6 +263,8 @@ class HexMap(object):
     #  @param gridWidth  Width of the grid lines [px].
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
+    #  @param gridColor  Color of gridlines.
+    #  @param background Background image.
     def __init__(self,
                  majorRow,
                  majorCol,
@@ -261,22 +276,29 @@ class HexMap(object):
                  gridWidth,
                  leftMargin = None,
                  topMargin  = None,
+                 gridColor  = None,
                  background = None):
         # Check arguments
-        exception.arg_check(majorRow,   int)
-        exception.arg_check(majorCol,   int)
-        exception.arg_check(rows,       int)
-        exception.arg_check(cols,       int)
-        exception.arg_check(width,      int)
-        exception.arg_check(height,     int)
-        exception.arg_check(hexSize,    float)
-        exception.arg_check(gridWidth,  int)
-        exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
-        exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
-        self._background = exception.arg_check(background, pilimage.Image, pilimage.new("RGBA", (width,height), color=(0,0,0,255)))
+        exception.arg_check(majorRow,              int)
+        exception.arg_check(majorCol,              int)
+        exception.arg_check(rows,                  int)
+        exception.arg_check(cols,                  int)
+        self._width = exception.arg_check(width,   int)
+        self._height = exception.arg_check(height, int)
+        exception.arg_check(hexSize,               float)
+        exception.arg_check(gridWidth,             int)
+        self._leftMargin = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
+        self._topMargin  = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+        self._gridColor  = exception.arg_check(gridColor,  color.Color, _GRID_COLOR)
+        self._background = exception.arg_check(background, pilimage.Image, pilimage.new("RGBA", (width,height), color=color.BLACK.rgba()))
 
         # Set map size.
-        self._set_params(width, height, leftMargin, topMargin)
+        self._set_params(self._width, 
+                         self._height, 
+                         self._leftMargin, 
+                         self._topMargin, 
+                         self._gridColor, 
+                         self._background)
 
         # Working image. Leave as None until ready to draw.
         self.workingImage = None
@@ -296,12 +318,22 @@ class HexMap(object):
     #  @param height     Hex map height in pixels.
     #  @param leftMargin Left margin in pixels.
     #  @param topMargin  Top margin in pixels.
-    def _set_params(self, width, height, leftMargin, topMargin):
+    #  @param gridColor  Color of gridlines.
+    #  @param background Background image.
+    def _set_params(self, 
+                    width      = None, 
+                    height     = None, 
+                    leftMargin = None, 
+                    topMargin  = None, 
+                    gridColor  = None, 
+                    background = None):
         # Check arguments
-        self._width      = exception.arg_check(width,      int)
-        self._height     = exception.arg_check(height,     int)
-        self._leftMargin = exception.arg_check(leftMargin, int)
-        self._topMargin  = exception.arg_check(topMargin,  int)
+        self._width      = exception.arg_check(width,      int,            self._width)
+        self._height     = exception.arg_check(height,     int,            self._height)
+        self._leftMargin = exception.arg_check(leftMargin, int,            self._leftMargin)
+        self._topMargin  = exception.arg_check(topMargin,  int,            self._topMargin)
+        self._gridColor  = exception.arg_check(gridColor,  color.Color,    self._gridColor)
+        self._background = exception.arg_check(background, pilimage.Image, self._background)
 
     ## Draw hex map.
     def draw(self):
@@ -428,6 +460,7 @@ class SectorImage(object):
     #  @param bottomMarginRatio Bottom margin ratio relative to width.
     #  @param leftMarginRatio   Left margin ratio relative to width.
     #  @param rightMarginRatio  Right margin ratio relative to width.
+    #  @param gridColor         Color of gridlines.
     def __init__(self,
                  majorRow,
                  majorCol,
@@ -437,26 +470,26 @@ class SectorImage(object):
                  topMarginRatio    = None,
                  bottomMarginRatio = None,
                  leftMarginRatio   = None,
-                 rightMarginRatio  = None):
+                 rightMarginRatio  = None,
+                 gridColor         = _GRID_COLOR):
         # Check arguments
-        self._majorRow    = exception.arg_check(majorRow,          int)
-        self._majorCol    = exception.arg_check(majorRow,          int)
-        self._rows        = exception.arg_check(rows,              int)
-        self._cols        = exception.arg_check(cols,              int)
-        width             = exception.arg_check(width,             int,   _SECTOR_IMAGE_WIDTH*_SECTOR_IMAGE_SCALE)
-        topMarginRatio    = exception.arg_check(topMarginRatio,    float, _SECTOR_TOP_MARGIN_RATIO)
-        bottomMarginRatio = exception.arg_check(bottomMarginRatio, float, _SECTOR_BOTTOM_MARGIN_RATIO)
-        leftMarginRatio   = exception.arg_check(leftMarginRatio,   float, _SECTOR_LEFT_MARGIN_RATIO)
-        rightMarginRatio  = exception.arg_check(rightMarginRatio,  float, _SECTOR_RIGHT_MARGIN_RATIO)
+        self._majorRow          = exception.arg_check(majorRow,          int)
+        self._majorCol          = exception.arg_check(majorRow,          int)
+        self._rows              = exception.arg_check(rows,              int)
+        self._cols              = exception.arg_check(cols,              int)
+        self._width             = exception.arg_check(width,             int,         _SECTOR_IMAGE_WIDTH*_SECTOR_IMAGE_SCALE)
+        self._topMarginRatio    = exception.arg_check(topMarginRatio,    float,       _SECTOR_TOP_MARGIN_RATIO)
+        self._bottomMarginRatio = exception.arg_check(bottomMarginRatio, float,       _SECTOR_BOTTOM_MARGIN_RATIO)
+        self._leftMarginRatio   = exception.arg_check(leftMarginRatio,   float,       _SECTOR_LEFT_MARGIN_RATIO)
+        self._rightMarginRatio  = exception.arg_check(rightMarginRatio,  float,       _SECTOR_RIGHT_MARGIN_RATIO)
+        self._gridColor         = exception.arg_check(gridColor,         color.Color, _GRID_COLOR)
 
         # Set sector map size
-        self._set_params(width, topMarginRatio, bottomMarginRatio, leftMarginRatio, rightMarginRatio)
-        width      = self._size[0]
-        height     = self._size[1]
-        hexSize    = self._hexSize
-        gridWidth  = self._gridWidth
-        leftMargin = self._leftMargin
-        topMargin  = self._topMargin
+        self._set_params(width, 
+                         self._topMarginRatio, 
+                         self._bottomMarginRatio, 
+                         self._leftMarginRatio, 
+                         self._rightMarginRatio)
 
         # Load background starfield image
         # Darken background image
@@ -465,14 +498,15 @@ class SectorImage(object):
         # Create sector main images
         self.hexMap = HexMap(self._majorRow, 
                              self._majorCol, 
-                             rows, 
-                             cols, 
-                             width, 
-                             height, 
-                             hexSize, 
-                             gridWidth, 
-                             leftMargin, 
-                             topMargin,
+                             self._rows, 
+                             self._cols, 
+                             self._width, 
+                             self._height, 
+                             self._hexSize, 
+                             self._gridWidth, 
+                             self._leftMargin, 
+                             self._topMargin,
+                             self._gridColor,
                              self._background)
         #self.infoTable = InfoTable()
         #self.orbitMaps = OrbitMaps()
@@ -481,25 +515,29 @@ class SectorImage(object):
         #self.corporations
         #self.religions
 
-    ## Set image parameters.
+    ## Internally set image parameters.
+    #
     #  @param self              The object pointer.
     #  @param width             Image width in pixels.
     #  @param topMarginRatio    Top margin ratio relative to height.
     #  @param bottomMarginRatio Bottom margin ratio relative to height.
     #  @param leftMarginRatio   Left margin ratio relative to width.
     #  @param rightMarginRatio  Right margin ratio relative to width.
+    #  @param gridColor         Color of gridlines.
     def _set_params(self,
                     width             = None,
                     topMarginRatio    = None,
                     bottomMarginRatio = None,
                     leftMarginRatio   = None,
-                    rightMarginRatio  = None):
+                    rightMarginRatio  = None,
+                    gridColor         = None):
         # Check arguments
-        width             = exception.arg_check(width,             int,   _SECTOR_IMAGE_WIDTH)
-        topMarginRatio    = exception.arg_check(topMarginRatio,    float, _SECTOR_TOP_MARGIN_RATIO)
-        bottomMarginRatio = exception.arg_check(bottomMarginRatio, float, _SECTOR_BOTTOM_MARGIN_RATIO)
-        leftMarginRatio   = exception.arg_check(leftMarginRatio,   float, _SECTOR_LEFT_MARGIN_RATIO)
-        rightMarginRatio  = exception.arg_check(rightMarginRatio,  float, _SECTOR_RIGHT_MARGIN_RATIO)
+        width             = exception.arg_check(width,             int,         self._width)
+        topMarginRatio    = exception.arg_check(topMarginRatio,    float,       self._topMarginRatio)
+        bottomMarginRatio = exception.arg_check(bottomMarginRatio, float,       self._bottomMarginRatio)
+        leftMarginRatio   = exception.arg_check(leftMarginRatio,   float,       self._leftMarginRatio)
+        rightMarginRatio  = exception.arg_check(rightMarginRatio,  float,       self._rightMarginRatio)
+        gridColor         = exception.arg_check(gridColor,         color.Color, self._gridColor)
 
         # Grid information
         rows = self._rows
@@ -554,6 +592,8 @@ class SectorImage(object):
 
         # Store values
         self._size             = (width, height)
+        self._width            = width
+        self._height           = height
         self._topMargin        = topMargin
         self._bottomMargin     = bottomMargin
         self._leftMargin       = leftMargin
@@ -636,3 +676,37 @@ class SectorImage(object):
     ## Save combined sector hex map, info table, and orbit maps.
     def save_sector_combined(self):
         raise Exception('Not implemented yet.')
+
+    ## Externally set image parameters.
+    #
+    #  @param self              The object pointer.
+    #  @param width             Image width in pixels.
+    #  @param topMarginRatio    Top margin ratio relative to height.
+    #  @param bottomMarginRatio Bottom margin ratio relative to height.
+    #  @param leftMarginRatio   Left margin ratio relative to width.
+    #  @param rightMarginRatio  Right margin ratio relative to width.
+    #  @param gridColor         Color of gridlines.
+    def set_params(self,
+                   width             = None,
+                   topMarginRatio    = None,
+                   bottomMarginRatio = None,
+                   leftMarginRatio   = None,
+                   rightMarginRatio  = None,
+                   gridColor         = None):
+        # Check arguments
+        width             = exception.arg_check(width,             int,         self._width)
+        topMarginRatio    = exception.arg_check(topMarginRatio,    float,       self._topMarginRatio)
+        bottomMarginRatio = exception.arg_check(bottomMarginRatio, float,       self._bottomMarginRatio)
+        leftMarginRatio   = exception.arg_check(leftMarginRatio,   float,       self._leftMarginRatio)
+        rightMarginRatio  = exception.arg_check(rightMarginRatio,  float,       self._rightMarginRatio)
+        gridColor         = exception.arg_check(gridColor,         color.Color, self._gridColor)
+        # Set internal parameters.
+        _set_params(width,
+                    topMarginRatio,
+                    bottomMarginRatio,
+                    leftMarginRatio,
+                    rightMarginRatio,
+                    gridColor)
+        # Set hex map parameters
+        # Set info table parameters
+        # Set orbit map parameters
