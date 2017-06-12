@@ -8,6 +8,7 @@ import operator
 
 import exception
 import generator
+import hexinfo
 import hexutils
 import image
 import orbitalobject
@@ -50,8 +51,13 @@ class Sector(object):
         self.religions    = list()
         self.systems      = dict()
         # Custom information
-        self.highlights = list()
-        self.routes     = list()
+        self.hexes  = dict()
+        for sRow in range(self._rows):
+            for sCol in range(self._cols):
+                # Add empty hex info for each row/col
+                self.hexes[(sRow,sCol)] = hexinfo.Hex()
+
+        self.routes = list()
         # Images
         self.images = image.SectorImage(self.majorRow,
                                         self.majorCol,

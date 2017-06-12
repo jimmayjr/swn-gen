@@ -2,6 +2,7 @@ __all__ = ['color',
            'corporation',
            'exception',
            'generator',
+           'hexinfo',
            'hexutils',
            'image',
            'name',
@@ -17,6 +18,7 @@ import color
 import corporation
 import exception
 import generator
+import hexinfo
 import hexutils
 import image
 import name
