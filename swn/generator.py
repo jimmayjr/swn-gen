@@ -337,7 +337,7 @@ class Generator(object):
         # Add worlds -----------------------------------------------------------
         worldCount = 0
         for systemKey in newSector.sorted_systems():
-            systemObj = newSector.systems[systemKey]
+            systemObj = newSector.hexes[systemKey].system
             # If world count has reached max, limit number of new worlds to one
             #    per system
             if ( worldCount < MAX_WORLDS):
@@ -395,7 +395,7 @@ class Generator(object):
         # Use one roll star system (ORSS) rules
         for systemKey in newSector.sorted_systems():
             # Get current system
-            systemObj = newSector.systems[systemKey]
+            systemObj = newSector.hexes[systemKey].system
             # Rolls (ORSS)
             d4  = random.dice_roll(1,4)
             d6  = random.dice_roll(1,6)
@@ -869,5 +869,5 @@ class Generator(object):
         #   name
         seedString = exception.arg_check(seedString,str)
         # Set seed
-        random.setSeed(random.seed_alphabet_decode(seedString))
+        random.set_seed(random.seed_alphabet_decode(seedString))
         self.seed = seedString

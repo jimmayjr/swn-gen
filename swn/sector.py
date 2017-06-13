@@ -49,7 +49,6 @@ class Sector(object):
         self.heresies     = list()
         self.parties      = list()
         self.religions    = list()
-        self.systems      = dict()
         # Custom information
         self.hexes  = dict()
         for sRow in range(self._rows):
@@ -71,10 +70,10 @@ class Sector(object):
         if (not self.hex_empty(sRow,sCol)):
             raise exception.ExistingDictKey((sRow,sCol))
         else:
-            self.systems[(sRow,sCol)] = system.System(name = sName,
-                                                      stars = list(),
-                                                      objects = list(),
-                                                      worlds = list())
+            self.hexes[(sRow,sCol)].system = system.System(name   = sName,
+                                                          stars   = list(),
+                                                          objects = list(),
+                                                          worlds  = list())
 
     ## Draw sector
     def draw_sector(self):
@@ -84,7 +83,7 @@ class Sector(object):
     ## Hex empty check.
     #  Check if a sector hex is empty (True) or has a system already (False).
     def hex_empty(self,sRow,sCol):
-        return(not self.systems.has_key((sRow,sCol)))
+        return (self.hexes[(sRow,sCol)].system is None)
 
     ## Print table of corporations.
     def print_corporations(self):
@@ -117,7 +116,7 @@ class Sector(object):
         columnHeight = 3
         # Create orbit map for each system
         for systemKey in self.sorted_systems():
-            starSystem = self.systems[systemKey]
+            starSystem = self.hexes[systemKey].system
             # Initial empty map
             systemMap = text.OrbitMap(starSystem.name + ' - ' + 'Orbit Map')
             # Determine maximum number of objects per orbit
@@ -232,7 +231,7 @@ class Sector(object):
         # Add rows
         wIndex = 1
         for systemKey in self.sorted_systems():
-            system = self.systems[systemKey]
+            system = self.hexes[systemKey].system
             # Keep track of first world in system so we only print the index,
             # hex, and system name for the first entry
             firstWorld = True
@@ -297,7 +296,7 @@ class Sector(object):
 
     ## Sort systems by hex numbering.
     def sorted_systems(self):
-        return(sorted(self.systems.iterkeys(),key=lambda e: (e[1], e[0])))
+        return(sorted(self.system_hex_list(),key=lambda e: (e[1], e[0])))
 
     ## Calculate hex distances between all systems.
     def system_distances(self):
@@ -318,22 +317,22 @@ class Sector(object):
         sumDistAll = list()
         sumDistAllPos = list()
         # For each hex row
-        rowList = range(0,SECTOR_ROWS)
+        rowList = range(0,self._rows)
         # Shuffle rowList to not favor any specific row
         np.random.shuffle(rowList)
         for row in rowList:
             # For each hex column
-            colList =range(0,SECTOR_COLS)
+            colList =range(0,self._cols)
             # Shuffle colList to not favor any specific column
             np.random.shuffle(colList)
             for col in colList:
                 # Sum of distances between stars
                 sumDist = 0
                 # Ignore hexes where there is already a system
-                if ( not self.systems.has_key((row,col)) ):
+                if ( self.hex_empty(row,col) ):
                     systemDistancesCalc = self.system_distances()
                     # Add new row for new system
-                    systemDistancesCalc.append([0] * (len(self.systems) + 1))
+                    systemDistancesCalc.append([0] * (len(self.system_hex_list()) + 1))
                     # For each system
                     for sAIndex in xrange(0,len(systems)):
                         # Calculate distances for new system
@@ -417,6 +416,19 @@ class Sector(object):
                 raise exception.MaxLoopIterationsExceed(MAX_LOOP_ITER)
         return(groups)
 
+    ## List of hexes with systems.
+    def system_hex_list(self):
+        systemList = list()
+        # Check each row
+        for hRow in range(self._rows):
+            # Check each column
+            for hCol in range(self._cols):
+                # See if hex has a system
+                if (not (self.hexes[(hRow,hCol)].system is None)):
+                    systemList.append((hRow,hCol))
+        # Return list of systems
+        return systemList
+
     ## Find neighbors of systems.
     def system_neighbors(self,row,col):
         # Get neighboring hexes
@@ -424,11 +436,9 @@ class Sector(object):
         # Container for neighboring star systems
         neighborSystems = list()
         for nh in neighborHexes:
-            # Actual systems have index in keylist
-            try:
-                self.systems.keys().index(nh)
-                # Get current star neighboring star systems
-                neighborSystems.append(nh)
-            except ValueError:
-                    pass
+            # Check if neighbor is in map
+            if self.hexes.has_key(nh):
+                # Check if system exists in hex
+                if (not (self.hexes[nh].system is None)):
+                    neighborSystems.append(nh)
         return(neighborSystems)

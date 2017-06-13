@@ -30,7 +30,7 @@ class Hex(object):
     def __init__(self, bgInfo=None, _system=None, vertexInfo=None):
         # Check arguments
         self._bgInfo = exception.arg_check(bgInfo,     HexBackgroundInfo, None)
-        self._system = exception.arg_check(_system,    system.System,     None)
+        self.system  = exception.arg_check(_system,    system.System,     None)
         vertexInfo   = exception.arg_check(vertexInfo, dict,              dict())
         # Check vertexInfo argument for invalid vertices or vertex info types
         for vKey in vertexInfo.keys():
