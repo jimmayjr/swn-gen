@@ -66,18 +66,12 @@ _ROUTE_COLOR                 = (179,235,250,100)
 _GRID_WIDTH_RATIO            = 3./1500.
 _GRID_COLOR                  = color.THEME_GREY
 _GRID_ALPHA                  = 200
-_STAR_LARGE_DIAMETER_RATIO   = 1./4.
-_STAR_MEDIUM_DIAMETER_RATIO  = 1./5.
-_STAR_SMALL_DIAMETER_RATIO   = 1./6.
-_STAR_DIAMETER_RATIO         = _STAR_MEDIUM_DIAMETER_RATIO
+_STAR_DIAMETER_RATIO         = 1./5.
 _STAR_OUTLINE_COLOR          = _COLORS['black']
 _STAR_COLOR                  = _COLORS['lightgrey']
 _ANGLE_BETWEEN_WORLDS        = 60
 _WORLD_ORBIT_RADIUS_RATIO    = 1./5.
-_WORLD_LARGE_DIAMETER_RATIO  = 1./7.
-_WORLD_MEDIUM_DIAMETER_RATIO = 1./9.
-_WORLD_SMALL_DIAMETER_RATIO  = 1./11.
-_WORLD_DIAMETER_RATIO        = _WORLD_MEDIUM_DIAMETER_RATIO
+_WORLD_DIAMETER_RATIO        = 1./9.
 _WORLD_COLOR                 = _COLORS['lightgrey']
 _TRIANGLE_LENGTH_RATIO       = 1./6.
 _TRIANGLE_MARGIN_RATIO       = 1./40.
@@ -110,7 +104,6 @@ class HexGrid(object):
     #  @param width      Width of the grid image [px].
     #  @param height     Height of the grid image [px].
     #  @param hexSize    Size of the grid hexes [px].
-    #  @param gridWidth  Width of the grid lines [px].
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
     #  @param gridColor  Color of gridlines.
@@ -122,7 +115,6 @@ class HexGrid(object):
                  width,
                  height,
                  hexSize,
-                 gridWidth,
                  leftMargin = None,
                  topMargin  = None,
                  gridColor  = None):
@@ -134,19 +126,17 @@ class HexGrid(object):
         self._width      = exception.arg_check(width,      int)
         self._height     = exception.arg_check(height,     int)
         self._hexSize    = exception.arg_check(hexSize,    float)
-        self._gridWidth  = exception.arg_check(gridWidth,  int)
-        self._leftMargin = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
-        self._topMargin  = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+        self._leftMargin = exception.arg_check(leftMargin, int, 0)
+        self._topMargin  = exception.arg_check(topMargin,  int, 0)
         self._gridColor  = exception.arg_check(gridColor, color.Color, _GRID_COLOR)
 
         # Set grid parameters.
-        self.set_parameters(self._width, 
-                            self._height, 
-                            self._hexSize, 
-                            self._gridWidth, 
-                            self._leftMargin, 
-                            self._topMargin,
-                            self._gridColor)
+        self._set_parameters(self._width, 
+                             self._height, 
+                             self._hexSize,  
+                             self._leftMargin, 
+                             self._topMargin,
+                             self._gridColor)
 
         # Working image. Leave as None until ready to draw.
         self.workingImage = None
@@ -190,34 +180,34 @@ class HexGrid(object):
                                   fill=_HEX_FONT_COLOR, 
                                   font=self._font)
 
-    ## Internally or externally set grid parameters.
+    ## Set grid parameters.
     #  @param self       The object pointer.
     #  @param width      Width of the grid image [px].
     #  @param height     Height of the grid image [px].
     #  @param hexSize    Size of the grid hexes [px].
-    #  @param gridWidth  Width of the grid lines [px].
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
     #  @param gridColor  Color of gridlines.
-    def set_parameters(self,
-                       width      = None,
-                       height     = None,
-                       hexSize    = None,
-                       gridWidth  = None,
-                       leftMargin = None,
-                       topMargin  = None,
-                       gridColor  = None):
+    def _set_parameters(self,
+                        width      = None,
+                        height     = None,
+                        hexSize    = None,
+                        leftMargin = None,
+                        topMargin  = None,
+                        gridColor  = None):
         # Check arguments
         self._width      = exception.arg_check(width,      int,         self._width)
         self._height     = exception.arg_check(height,     int,         self._height)
         self._hexSize    = exception.arg_check(hexSize,    float,       self._hexSize)
-        self._gridWidth  = exception.arg_check(gridWidth,  int,         self._gridWidth)
         self._leftMargin = exception.arg_check(leftMargin, int,         self._leftMargin)
         self._topMargin  = exception.arg_check(topMargin,  int,         self._topMargin)
         self._gridColor  = exception.arg_check(gridColor,  color.Color, self._gridColor)
 
         # Calculate hex height
         self._hexHeight = hexutils.flat_height(hexSize)
+
+        # Grid info
+        self._gridWidth = int(self._hexSize*_GRID_WIDTH_RATIO)
 
         # Hex font
         fontSize = int(_HEX_FONT_SIZE_RATIO*hexutils.flat_height(hexSize))
@@ -247,6 +237,126 @@ class HexGrid(object):
                        (((x1+xc, y1+yc), (x0+xc, y0+yc)) not in self._gridLines):
                         self._gridLines.append(((x0+xc, y0+yc), (x1+xc, y1+yc)))
 
+## Hex class.
+#
+#  The hex class is used to create imagery for a hex to display in a
+#  sector hex grid.
+class Hex(object):
+    ## Hex class constructor.
+    #  @param self    The object pointer.
+    #  @param hexSize The hex size to draw the system in [px].
+    def __init__(self,
+                 hexSize):
+        # Check arguments.
+        hexSize = exception.arg_check(hexSize, float)
+        # Set hex parameters.
+        self._set_parameters(hexSize)
+        # Blank hex information.
+        self.reset()
+        # Working image. Leave as None until ready to draw.
+        self.bgWorkingImage = None # Background
+        self.fgWorkingImage = None # Foreground
+
+    ## Add world data.
+    #  @param self   The object pointer.
+    #  @param text   Display text for the world.
+    #  @param _color Color for the display text.
+    def add_world(self, _color, text):
+        # Check arguments
+        _color = exception.arg_check(_color, color.Color)
+        text = exception.arg_check(text, str)
+        # Add world data to list
+        self._world.append((_color, text))
+
+    ## Draw hex.
+    #  @param self The object pointer.
+    def draw(self):
+        # Calculate size
+        width = flat_height(self._hexSize)
+
+        # Blank image before drawing
+        if self.fgWorkingImage is not None:
+            self.fgWorkingImage.close()
+        self.fgWorkingImage = pilimage.new("RGBA", (self._width, self._height))
+        if self.bgWorkingImage is not None:
+            self.bgWorkingImage.close()
+        self.bgWorkingImage = pilimage.new("RGBA", (self._width, self._height))
+        # Draw background
+        bgDrawingImage = pildraw.Draw(self.bgWorkingImage)
+
+        # Draw foreground
+        fgDrawingImage = pildraw.Draw(self.fgWorkingImage)
+
+        # Draw vertex triangles
+        # Draw system
+        fgDrawingImage.ellipse([(center[0]-_STAR_MEDIUM_DIAMETER/2,center[1]-_STAR_MEDIUM_DIAMETER/2),
+                                  (center[0]+_STAR_MEDIUM_DIAMETER/2,center[1]+_STAR_MEDIUM_DIAMETER/2)],
+                                 outline=_STAR_OUTLINE_COLOR,
+                                 fill=sectorGrid[(col,row)].getStarColor(star))
+        # Draw world
+        # Draw world text
+        # Draw name
+
+    ## Reset hex data.
+    #  @param self The object pointer.
+    def reset(self):
+        # Blank name
+        self._name = ''
+        # Blank system
+        self._system = color.NONE
+        # Blank each vertex
+        self._vertex = [color.NONE] * 6
+        # Blank worlds
+        self._world = list()
+
+    ## Resize hex.
+    #  @param self    The object pointer.
+    #  @param hexSize The hex size to draw the system in [px].
+    def resize(self, hexSize):
+        # Check arguments
+        exception.arg_check(hexSize, float)
+        # Set hex parameters.
+        self._set_parameters(self._hexSize)
+
+    ## Set hex parameters.
+    #  @param self The object pointer.
+    #  @hexSize    The hex size to draw the system in [px].
+    def _set_parameters(self, hexSize):
+        self._hexSize = exception.arg_check(hexSize, float)
+        # Image size.
+        self._width = flat_height()
+        self._height = flat_height()
+        # System data.
+        self._systemDiameter = int(hexSize*_STAR_DIAMETER_RATIO)
+        systemFontSize       = int(self._height*_SYSTEM_NAME_FONT_SIZE_RATIO)
+        self._systemFont     = pilfont.truetype(_FONT_FILENAME, systemFontSize, encoding="unic")
+        # World data.
+        self._worldDiamater    = int(hexSize*_WORLD_DIAMETER_RATIO)
+        worldFontSize          = int(self._height*_INFO_FONT_SIZE_RATIO)
+        self._worldFont        = pilfont.truetype(_FONT_FILENAME, infoFontSize, encoding="unic")
+        self._worldFontMargin  = int(self._hexSize*_INFO_MARGIN_RATIO)
+        self._worldOrbitRadius = int(self._height*_WORLD_ORBIT_RADIUS_RATIO)
+        # Vertex info data.
+        triangleLength   = int(hexSize*_TRIANGLE_LENGTH_RATIO)
+        triangleMargin   = int(hexHeight*_TRIANGLE_MARGIN_RATIO)
+
+    ## Set system color.
+    #  @param self The object pointer.
+    #  @param _color Color for the system.
+    def set_system_color(self, _color):
+        # Check arguments.
+        self._system = exception.arg_check(_color, color.Color)
+
+    ## Set vertex color.
+    #  @param self The object pointer.
+    #  @param Color for the vertex.
+    def set_vertex_color(self, vertex, _color):
+        # Check arguments
+        vertex = exception.arg_check(vertex, int)
+        vertex = exception.arg_range_check(vertex, 0, 5)
+        _color = exception.arg_check(_color, color.Color)
+        self._vertex[vertex] = _color
+
 ## Hex map class.
 #
 #  The hex map class is used to create a sector hex map.
@@ -260,7 +370,6 @@ class HexMap(object):
     #  @param width      The width of the sector image [px].
     #  @param height     The height of the sector image [px].
     #  @param hexSize    The hex size to draw the system in [px].
-    #  @param gridWidth  Width of the grid lines [px].
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
     #  @param gridColor  Color of gridlines.
@@ -273,12 +382,11 @@ class HexMap(object):
                  width,
                  height,
                  hexSize,
-                 gridWidth,
                  leftMargin = None,
                  topMargin  = None,
                  gridColor  = None,
                  background = None):
-        # Check arguments
+        # Check arguments.
         exception.arg_check(majorRow,              int)
         exception.arg_check(majorCol,              int)
         exception.arg_check(rows,                  int)
@@ -286,26 +394,25 @@ class HexMap(object):
         self._width = exception.arg_check(width,   int)
         self._height = exception.arg_check(height, int)
         exception.arg_check(hexSize,               float)
-        exception.arg_check(gridWidth,             int)
-        self._leftMargin = exception.arg_check(leftMargin, int, math.ceil(gridWidth/2.))
-        self._topMargin  = exception.arg_check(topMargin,  int, math.ceil(gridWidth/2.))
+        self._leftMargin = exception.arg_check(leftMargin, int, 0)
+        self._topMargin  = exception.arg_check(topMargin,  int, 0)
         self._gridColor  = exception.arg_check(gridColor,  color.Color, _GRID_COLOR)
         self._background = exception.arg_check(background, pilimage.Image, pilimage.new("RGBA", (width,height), color=color.BLACK.rgba()))
 
         # Set map size.
-        self._set_params(self._width, 
-                         self._height, 
-                         self._leftMargin, 
-                         self._topMargin, 
-                         self._gridColor, 
-                         self._background)
+        self._set_parameters(self._width, 
+                             self._height, 
+                             self._leftMargin, 
+                             self._topMargin, 
+                             self._gridColor, 
+                             self._background)
 
         # Working image. Leave as None until ready to draw.
         self.workingImage = None
 
         # Create sector grid
         self.hexGrid = HexGrid(majorRow, majorCol, rows, cols, width, height, 
-                               hexSize, gridWidth, leftMargin, topMargin)
+                               hexSize, leftMargin, topMargin)
 
         # Create sector routes
         #self.routes = Routes(
@@ -320,13 +427,13 @@ class HexMap(object):
     #  @param topMargin  Top margin in pixels.
     #  @param gridColor  Color of gridlines.
     #  @param background Background image.
-    def _set_params(self, 
-                    width      = None, 
-                    height     = None, 
-                    leftMargin = None, 
-                    topMargin  = None, 
-                    gridColor  = None, 
-                    background = None):
+    def _set_parameters(self, 
+                        width      = None, 
+                        height     = None, 
+                        leftMargin = None, 
+                        topMargin  = None, 
+                        gridColor  = None, 
+                        background = None):
         # Check arguments
         self._width      = exception.arg_check(width,      int,            self._width)
         self._height     = exception.arg_check(height,     int,            self._height)
@@ -416,35 +523,6 @@ class HexMap(object):
         # Save image
         saveImage.save(path)
 
-## Hex class.
-#
-#  The hex class is used to create imagery for a hex to display in a
-#  sector hex grid.
-class Hex(object):
-    ## Hex class constructor.
-    #  @param self    The object pointer.
-    #  @param hexSize The hex size to draw the system in [px].
-    def __init__(self,
-                 hexSize):
-        raise Exception('Not implemented yet.')
-        # Check arguments.
-        hexSize = exception.arg_check(hexSize, float)
-
-        # Set hex size.
-        resize(hexSize)
-
-        # Working image. Leave as None until ready to draw.
-        self.bgWorkingImage = None # Background
-        self.fgWorkingImage = None # Foreground
-
-    ## Resize hex.
-    #  @param self    The object pointer.
-    #  @param hexSize The hex size to draw the system in [px].
-    def resize(self, hexSize):
-        self._hexSize = exception.arg_check(hexSize, float)
-
-
-
 ## Sector image class.
 #
 #  The sector image class is used to create images of an SWN sector.
@@ -503,7 +581,6 @@ class SectorImage(object):
                              self._width, 
                              self._height, 
                              self._hexSize, 
-                             self._gridWidth, 
                              self._leftMargin, 
                              self._topMargin,
                              self._gridColor,
@@ -574,22 +651,8 @@ class SectorImage(object):
         routeWidth       = int(hexSize*_ROUTE_WIDTH_RATIO)
         routeBlurSize    = routeWidth*_ROUTE_BLUR_SIZE_RATIO
         gridWidth        = int(routeWidth*_GRID_WIDTH_RATIO)
-        starDiameter     = int(hexSize*_STAR_DIAMETER_RATIO)
-        worldOrbitRadius = int(hexHeight*_WORLD_ORBIT_RADIUS_RATIO)
-        worldDiameter    = int(hexSize*_WORLD_DIAMETER_RATIO)
-        triangleLength   = int(hexSize*_TRIANGLE_LENGTH_RATIO)
-        triangleMargin   = int(hexHeight*_TRIANGLE_MARGIN_RATIO)
-
-        # Font specifications
-        hexFontSize        = int(hexHeight*_HEX_FONT_SIZE_RATIO)
-        hexFont            = pilfont.truetype(_FONT_FILENAME, hexFontSize, encoding="unic")
-        hexNumMargin       = int(hexHeight*_HEX_NUM_MARGIN_RATIO)
-        systemNameFontSize = int(hexHeight*_SYSTEM_NAME_FONT_SIZE_RATIO)
-        systemNameFont     = pilfont.truetype(_FONT_FILENAME, systemNameFontSize, encoding="unic")
-        infoFontSize       = int(hexHeight*_INFO_FONT_SIZE_RATIO)
-        infoFont           = pilfont.truetype(_FONT_FILENAME, infoFontSize, encoding="unic")
-        infoMargin         = int(hexSize*_INFO_MARGIN_RATIO)
-
+           
+        
         # Store values
         self._size             = (width, height)
         self._width            = width
@@ -602,16 +665,6 @@ class SectorImage(object):
         self._routeWidth       = routeWidth
         self._routeBlurSize    = routeBlurSize
         self._gridWidth        = gridWidth
-        self._starDiameter     = starDiameter
-        self._worldOrbitRadius = worldOrbitRadius
-        self._worldDiameter    = worldDiameter
-        self._triangleLength   = triangleLength
-        self._triangleMargin   = triangleMargin
-        self._hexFont          = hexFont
-        self._hexNumMargin     = hexNumMargin
-        self._systemNameFont   = systemNameFont
-        self._infoFont         = infoFont
-        self._infoMargin       = infoMargin
 
     def draw_sector(self):
         # Draw layers ----------------------------------------------------------
