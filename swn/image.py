@@ -67,8 +67,8 @@ _GRID_WIDTH_RATIO            = 3./1500.
 _GRID_COLOR                  = color.THEME_GREY
 _GRID_ALPHA                  = 200
 _STAR_DIAMETER_RATIO         = 1./5.
-_STAR_OUTLINE_COLOR          = _COLORS['black']
-_STAR_COLOR                  = _COLORS['lightgrey']
+_SYSTEM_OUTLINE_COLOR        = color.BLACK
+_SYSTEM_COLOR                = color.LIGHT_GREY
 _ANGLE_BETWEEN_WORLDS        = 60
 _WORLD_ORBIT_RADIUS_RATIO    = 1./5.
 _WORLD_DIAMETER_RATIO        = 1./9.
@@ -145,7 +145,7 @@ class HexGrid(object):
     #  @param self The object pointer.
     def draw(self):
         # Blank image before drawing
-        if self.workingImage is not None:
+        if not (self.workingImage is None):
             self.workingImage.close()
         self.workingImage = pilimage.new("RGBA", (self._width,self._height))
         
@@ -257,6 +257,39 @@ class Hex(object):
         self.bgWorkingImage = None # Background
         self.fgWorkingImage = None # Foreground
 
+    ## Set hex parameters.
+    #  @param self The object pointer.
+    #  @hexSize    The hex size to draw the system in [px].
+    def _set_parameters(self, hexSize):
+        self._hexSize = exception.arg_check(hexSize, float)
+        # Image size.
+        self._width  = int(hexutils.flat_width(self._hexSize))
+        self._height = int(hexutils.flat_height(self._hexSize))
+        # System data.
+        self._systemDiameter = int(hexSize*_STAR_DIAMETER_RATIO)
+        systemFontSize       = int(self._height*_SYSTEM_NAME_FONT_SIZE_RATIO)
+        self._systemFont     = pilfont.truetype(_FONT_FILENAME, systemFontSize, encoding="unic")
+        # World data.
+        self._worldDiamater    = int(hexSize*_WORLD_DIAMETER_RATIO)
+        worldFontSize          = int(self._height*_INFO_FONT_SIZE_RATIO)
+        self._worldFont        = pilfont.truetype(_FONT_FILENAME, worldFontSize, encoding="unic")
+        self._worldFontMargin  = int(self._hexSize*_INFO_MARGIN_RATIO)
+        self._worldOrbitRadius = int(self._height*_WORLD_ORBIT_RADIUS_RATIO)
+        # Vertex info data.
+        self._triangleLength = int(hexSize*_TRIANGLE_LENGTH_RATIO)
+        self._triangleMargin = int(self._height*_TRIANGLE_MARGIN_RATIO)
+
+    ## Add system information.
+    #  @param self The object pointer.
+    #  @param _name Color for the system.
+    #  @param fillColor Color for the system.
+    #  @param outlineColor Color for the system outline.
+    def add_system(self, _name, fillColor=None, outlineColor=None):
+        # Check arguments.
+        self._systemName         = exception.arg_check(_name,        str)
+        self._systemColor        = exception.arg_check(fillColor,    color.Color, _SYSTEM_COLOR)
+        self._systemOutlineColor = exception.arg_check(outlineColor, color.Color, _SYSTEM_OUTLINE_COLOR)
+
     ## Add world data.
     #  @param self   The object pointer.
     #  @param text   Display text for the world.
@@ -271,14 +304,13 @@ class Hex(object):
     ## Draw hex.
     #  @param self The object pointer.
     def draw(self):
-        # Calculate size
-        width = flat_height(self._hexSize)
-
+        # Calculate center
+        (cX, cY) = (int(self._width/2), int(self._height/2))
         # Blank image before drawing
-        if self.fgWorkingImage is not None:
+        if not(self.fgWorkingImage is None):
             self.fgWorkingImage.close()
         self.fgWorkingImage = pilimage.new("RGBA", (self._width, self._height))
-        if self.bgWorkingImage is not None:
+        if not(self.bgWorkingImage is None):
             self.bgWorkingImage.close()
         self.bgWorkingImage = pilimage.new("RGBA", (self._width, self._height))
         # Draw background
@@ -289,10 +321,11 @@ class Hex(object):
 
         # Draw vertex triangles
         # Draw system
-        fgDrawingImage.ellipse([(center[0]-_STAR_MEDIUM_DIAMETER/2,center[1]-_STAR_MEDIUM_DIAMETER/2),
-                                  (center[0]+_STAR_MEDIUM_DIAMETER/2,center[1]+_STAR_MEDIUM_DIAMETER/2)],
-                                 outline=_STAR_OUTLINE_COLOR,
-                                 fill=sectorGrid[(col,row)].getStarColor(star))
+        if not (self._systemName is None):
+            fgDrawingImage.ellipse([(cX-self._systemDiameter/2, cY-self._systemDiameter/2),
+                                    (cX+self._systemDiameter/2, cY+self._systemDiameter/2)],
+                                   outline = self._systemColorOutline.rgba(),
+                                   fill    = self._systemColor.rgba())
         # Draw world
         # Draw world text
         # Draw name
@@ -301,12 +334,17 @@ class Hex(object):
     #  @param self The object pointer.
     def reset(self):
         # Blank name
-        self._name = ''
+        self._systemName = None
         # Blank system
-        self._system = color.NONE
+        self._systemColor = color.NONE
+        self._systemColorOutline = color.NONE
         # Blank each vertex
-        self._vertex = [color.NONE] * 6
+        self._vertexColors = [color.NONE] * 6
         # Blank worlds
+        self._world = list()
+
+    ## Reset world data.
+    def reset_worlds(self):
         self._world = list()
 
     ## Resize hex.
@@ -318,35 +356,6 @@ class Hex(object):
         # Set hex parameters.
         self._set_parameters(self._hexSize)
 
-    ## Set hex parameters.
-    #  @param self The object pointer.
-    #  @hexSize    The hex size to draw the system in [px].
-    def _set_parameters(self, hexSize):
-        self._hexSize = exception.arg_check(hexSize, float)
-        # Image size.
-        self._width = flat_height()
-        self._height = flat_height()
-        # System data.
-        self._systemDiameter = int(hexSize*_STAR_DIAMETER_RATIO)
-        systemFontSize       = int(self._height*_SYSTEM_NAME_FONT_SIZE_RATIO)
-        self._systemFont     = pilfont.truetype(_FONT_FILENAME, systemFontSize, encoding="unic")
-        # World data.
-        self._worldDiamater    = int(hexSize*_WORLD_DIAMETER_RATIO)
-        worldFontSize          = int(self._height*_INFO_FONT_SIZE_RATIO)
-        self._worldFont        = pilfont.truetype(_FONT_FILENAME, infoFontSize, encoding="unic")
-        self._worldFontMargin  = int(self._hexSize*_INFO_MARGIN_RATIO)
-        self._worldOrbitRadius = int(self._height*_WORLD_ORBIT_RADIUS_RATIO)
-        # Vertex info data.
-        triangleLength   = int(hexSize*_TRIANGLE_LENGTH_RATIO)
-        triangleMargin   = int(hexHeight*_TRIANGLE_MARGIN_RATIO)
-
-    ## Set system color.
-    #  @param self The object pointer.
-    #  @param _color Color for the system.
-    def set_system_color(self, _color):
-        # Check arguments.
-        self._system = exception.arg_check(_color, color.Color)
-
     ## Set vertex color.
     #  @param self The object pointer.
     #  @param Color for the vertex.
@@ -355,7 +364,7 @@ class Hex(object):
         vertex = exception.arg_check(vertex, int)
         vertex = exception.arg_range_check(vertex, 0, 5)
         _color = exception.arg_check(_color, color.Color)
-        self._vertex[vertex] = _color
+        self._vertexColors[vertex] = _color
 
 ## Hex map class.
 #
@@ -387,13 +396,13 @@ class HexMap(object):
                  gridColor  = None,
                  background = None):
         # Check arguments.
-        exception.arg_check(majorRow,              int)
-        exception.arg_check(majorCol,              int)
-        exception.arg_check(rows,                  int)
-        exception.arg_check(cols,                  int)
-        self._width = exception.arg_check(width,   int)
-        self._height = exception.arg_check(height, int)
-        exception.arg_check(hexSize,               float)
+        exception.arg_check(majorRow, int)
+        exception.arg_check(majorCol, int)
+        exception.arg_check(rows,     int)
+        exception.arg_check(cols,     int)
+        self._width      = exception.arg_check(width,      int)
+        self._height     = exception.arg_check(height,     int)
+        self._hexSize    = exception.arg_check(hexSize,    float)
         self._leftMargin = exception.arg_check(leftMargin, int, 0)
         self._topMargin  = exception.arg_check(topMargin,  int, 0)
         self._gridColor  = exception.arg_check(gridColor,  color.Color, _GRID_COLOR)
@@ -408,7 +417,7 @@ class HexMap(object):
                              self._background)
 
         # Working image. Leave as None until ready to draw.
-        self.workingImage = None
+        self._workingImage = None
 
         # Create sector grid
         self.hexGrid = HexGrid(majorRow, majorCol, rows, cols, width, height, 
@@ -418,6 +427,12 @@ class HexMap(object):
         #self.routes = Routes(
 
         # Create sector info
+        self.hexInfo = dict()
+        # For each row
+        for row in xrange(rows):
+            # For each column
+            for col in xrange(cols):
+                self.hexInfo[(row,col)] = Hex(hexSize)
 
     ## Set hex map parameters.
     #  @param self       The object pointer.
@@ -445,28 +460,40 @@ class HexMap(object):
     ## Draw hex map.
     def draw(self):
         # Blank image before drawing
-        if self.workingImage is not None:
-            self.workingImage.close()
-        self.workingImage = pilimage.new("RGBA", (self._width, self._height))
+        if not (self._workingImage is None):
+            self._workingImage.close()
+        self._workingImage = pilimage.new("RGBA", (self._width, self._height))
         # Draw layers ----------------------------------------------------------
         # Draw sector grid
         self.hexGrid.draw()
         # Draw sector routes
         #self.routes.draw()
         # Draw sector system info
-        #self.systemInfo.draw()
+        for (row, col) in self.hexInfo.iterkeys():
+            self.hexInfo[(row,col)].draw()
 
         # Combine layers -------------------------------------------------------
         # Paste sector grid
-        self.workingImage.paste(self.hexGrid.workingImage,mask=self.hexGrid.workingImage)
+        self._workingImage.paste(self.hexGrid.workingImage,mask=self.hexGrid.workingImage)
         # Paste sector system info backgrounds
         #for each hex
         #self.workingImage.paste(self.systemInfo.bgWorkingImage,mask=self.hexGrid.workingImage)
         # Paste sector routes
         #self.workingImage.paste(self.routes.workingImage,mask=self.hexGrid.workingImage)
         # Paste sector system info foregrounds
-        #for each hex
-        #self.workingImage.paste(self.systemInfo.workingImage,mask=self.hexGrid.workingImage)
+        for (row, col) in self.hexInfo.iterkeys():
+            # Get hex centers
+            (cX, cY) = hexutils.odd_q_center(self._hexSize, row, col)
+            # Round to integers
+            (cX, cY) = (int(cX), int(cY))
+            # Offset by margins
+            (cX, cY) = (cX+self._leftMargin, cY+self._topMargin)
+            # Get width
+            hexWidth = int(hexutils.flat_width(self._hexSize))
+            hexHeight = int(hexutils.flat_height(self._hexSize))
+            self._workingImage.paste(self.hexInfo[(row,col)].fgWorkingImage,
+                                     box=(cX-hexWidth/2, cY-hexHeight/2),
+                                     mask=self.hexInfo[(row,col)].fgWorkingImage)
 
     ## Set hex map size.
     def resize(self, width, height, leftMargin, topMargin):
@@ -490,7 +517,7 @@ class HexMap(object):
         path = exception.arg_check(path, str)
 
         # Draw image if it hasn't been
-        if self.workingImage is None:
+        if self._workingImage is None:
             self.draw()
 
         # Resize background image.
@@ -513,7 +540,7 @@ class HexMap(object):
             saveImage.paste(bgResize, box=((tile)*self._width,0), mask=bgResize)
 
         # Paste working image
-        saveImage.paste(self.workingImage, box=(0,0), mask=self.workingImage)
+        saveImage.paste(self._workingImage, box=(0,0), mask=self._workingImage)
 
         # Resize/scale down with antialiasing to smooth jagged lines
         saveImage = saveImage.resize((self._width/_SECTOR_IMAGE_SCALE, 

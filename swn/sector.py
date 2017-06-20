@@ -146,7 +146,7 @@ class Sector(object):
                 if ( type(o) is orbitalobject.Planet ):
                     planetString = orbitalobject.TABLE_ORBITAL_OBJECT_ABBREVIATIONS[o.objectType]
                     # Signify if planet is a world
-                    if ( o.world is not None ):
+                    if not ( o.world is None ):
                         worldIndex = starSystem.worlds.index(o.world)
                         orbitList.append(planetString + '-W' + str(worldIndex+1))
                     else:
@@ -157,7 +157,7 @@ class Sector(object):
                     for s in o.stations:
                         stationString = orbitalobject.TABLE_ORBITAL_OBJECT_ABBREVIATIONS[s.objectType]
                         # Signify if station is a world
-                        if ( s.world is not None ):
+                        if not ( s.world is None ):
                             worldIndex = starSystem.worlds.index(s.world)
                             satelliteList.append(stationString + '-W' + str(worldIndex+1))
                         else:
@@ -166,7 +166,7 @@ class Sector(object):
                     for m in o.moons:
                         moonString = orbitalobject.TABLE_ORBITAL_OBJECT_ABBREVIATIONS[m.objectType]
                         # Signify if moon is a world
-                        if ( m.world is not None ):
+                        if not ( m.world is None ):
                             worldIndex = starSystem.worlds.index(m.world)
                             satelliteList.append(moonString + '-W' + str(worldIndex+1))
                         else:
@@ -442,3 +442,26 @@ class Sector(object):
                 if (not (self.hexes[nh].system is None)):
                     neighborSystems.append(nh)
         return(neighborSystems)
+
+    ## Update image hex with system data.
+    def update_hex_image(self, hRow, hCol):
+        # Check arguments
+        hRow = exception.arg_check(hRow,int)
+        hCol = exception.arg_check(hCol,int)
+        # Get system data
+        systemData = self.hexes[(hRow,hCol)].system
+        # Get hex image.
+        hexImage = self.images.hexMap.hexInfo[(hRow,hCol)]
+        # Add system to hex image
+        hexImage.add_system(systemData.name)
+
+    ## Update images with sector data.
+    def update_images(self):
+        # System hexes.
+        for (hRow,hCol) in self.system_hex_list():
+            self.update_hex_image(hRow,hCol)
+            
+
+        # World info table.
+
+        # Orbit diagram.

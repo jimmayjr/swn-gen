@@ -47,7 +47,7 @@ class Color(object):
         self._r = exception.arg_range_check(r, 0, 255)
         self._g = exception.arg_range_check(g, 0, 255)
         self._b = exception.arg_range_check(b, 0, 255)
-        self._a = exception.arg_range_check(b, 0, 255)
+        self._a = exception.arg_range_check(a, 0, 255)
 
 
 # Default colors ---------------------------------------------------------------
