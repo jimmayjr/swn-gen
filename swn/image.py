@@ -16,36 +16,6 @@ import hexutils
 
 _DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
-# Colors -----------------------------------------------------------------------
-_COLORS = dict()
-_COLORS['black']        = (0,0,0,255)
-_COLORS['blue']         = (0,0,255,255)
-_COLORS['cyan']         = (0,255,255,255)
-_COLORS['green']        = (0,255,0,255)
-_COLORS['magenta']      = (255,0,255,255)
-_COLORS['orange']       = (255,100,0,255)
-_COLORS['red']          = (255,0,0,255)
-_COLORS['yellow']       = (255,255,0,255)
-_COLORS['white']        = (255,255,255,255)
-_COLORS['grey']         = (150,150,150,255)
-# Light Colors
-_COLORS['lightgrey']    = (200,200,200,255)
-# Dark Colors
-_COLORS['darkblue']     = (0,0,100,255)
-_COLORS['darkgreen']    = (0,150,0,255)
-_COLORS['darkgrey']     = (50,50,50,255)
-_COLORS['darkred']      = (100,0,0,255)
-_COLORS['darkyellow']   = (100,100,0,255)
-# Theme colors
-_COLORS['themeblue']    = (119,158,203,255)
-_COLORS['themegreen']   = (119,190,119,255)
-_COLORS['thememagenta'] = (244,154,194,255)
-_COLORS['themeorange']  = (216,149,32,255)
-_COLORS['themepurple']  = (170,65,202,255)
-_COLORS['themered']     = (194,59,34,255)
-_COLORS['themeyellow']  = (253,253,150,255)
-_COLORS['themedarkred'] = (150,0,0,255)
-
 # Sector Defaults --------------------------------------------------------------
 # Size
 _SECTOR_IMAGE_WIDTH  = 1500 # px
@@ -70,9 +40,9 @@ _STAR_DIAMETER_RATIO         = 1./5.
 _SYSTEM_OUTLINE_COLOR        = color.BLACK
 _SYSTEM_COLOR                = color.LIGHT_GREY
 _ANGLE_BETWEEN_WORLDS        = 60
-_WORLD_ORBIT_RADIUS_RATIO    = 1./5.
+_WORLD_ORBIT_RADIUS_RATIO    = 1./3.
 _WORLD_DIAMETER_RATIO        = 1./9.
-_WORLD_COLOR                 = _COLORS['lightgrey']
+_WORLD_COLOR                 = color.LIGHT_GREY
 _TRIANGLE_LENGTH_RATIO       = 1./6.
 _TRIANGLE_MARGIN_RATIO       = 1./40.
 _FACTION_ALPHA               = 35
@@ -80,13 +50,13 @@ _FACTION_ALPHA               = 35
 # Font specifications
 _FONT_FILENAME               = os.path.join(_DIR_PATH,'fonts/mplus-1m-regular.ttf')
 _HEX_FONT_SIZE_RATIO         = 1./6.
-_HEX_FONT_COLOR              = _COLORS['grey']
+_HEX_FONT_COLOR              = color.THEME_GREY
 _HEX_NUM_MARGIN_RATIO        = 1./18.
 _SYSTEM_NAME_FONT_SIZE_RATIO = 1./6.5
-_SYSTEM_FONT_COLOR           = _COLORS['lightgrey']
-_SYSTEM_NAME_MARGIN_RATIO    = 1./3.
+_SYSTEM_FONT_COLOR           = color.LIGHT_GREY
+_SYSTEM_NAME_MARGIN_RATIO    = 1./6.
 _INFO_FONT_SIZE_RATIO        = 1./6.
-_INFO_MARGIN_RATIO           = 1./6.
+_INFO_MARGIN_RATIO           = 1./4.
 _SECTOR_FONT_FILENAME        = _FONT_FILENAME
 _LIST_FONT_FILENAME          = _FONT_FILENAME
 
@@ -177,7 +147,7 @@ class HexGrid(object):
                 drawingImage.text((xc-w/2, 
                                    yc+self._hexHeight/2 - h - _HEX_NUM_MARGIN_RATIO*self._hexHeight),
                                   hexNum, 
-                                  fill=_HEX_FONT_COLOR, 
+                                  fill=_HEX_FONT_COLOR.rgba(), 
                                   font=self._font)
 
     ## Set grid parameters.
@@ -269,12 +239,13 @@ class Hex(object):
         self._systemDiameter = int(hexSize*_STAR_DIAMETER_RATIO)
         systemFontSize       = int(self._height*_SYSTEM_NAME_FONT_SIZE_RATIO)
         self._systemFont     = pilfont.truetype(_FONT_FILENAME, systemFontSize, encoding="unic")
+        self._systemFontMargin = int(self._height*_SYSTEM_NAME_MARGIN_RATIO)
         # World data.
-        self._worldDiamater    = int(hexSize*_WORLD_DIAMETER_RATIO)
-        worldFontSize          = int(self._height*_INFO_FONT_SIZE_RATIO)
-        self._worldFont        = pilfont.truetype(_FONT_FILENAME, worldFontSize, encoding="unic")
-        self._worldFontMargin  = int(self._hexSize*_INFO_MARGIN_RATIO)
-        self._worldOrbitRadius = int(self._height*_WORLD_ORBIT_RADIUS_RATIO)
+        self._worldDiamater      = int(hexSize*_WORLD_DIAMETER_RATIO)
+        self._worldOrbitDiameter = int(self._height*_WORLD_ORBIT_RADIUS_RATIO)
+        worldFontSize            = int(self._height*_INFO_FONT_SIZE_RATIO)
+        self._worldFont          = pilfont.truetype(_FONT_FILENAME, worldFontSize, encoding="unic")
+        self._worldFontMargin    = int(self._hexSize*_INFO_MARGIN_RATIO)
         # Vertex info data.
         self._triangleLength = int(hexSize*_TRIANGLE_LENGTH_RATIO)
         self._triangleMargin = int(self._height*_TRIANGLE_MARGIN_RATIO)
@@ -291,44 +262,93 @@ class Hex(object):
         self._systemOutlineColor = exception.arg_check(outlineColor, color.Color, _SYSTEM_OUTLINE_COLOR)
 
     ## Add world data.
-    #  @param self   The object pointer.
-    #  @param text   Display text for the world.
-    #  @param _color Color for the display text.
-    def add_world(self, _color, text):
+    #  @param self         The object pointer.
+    #  @param text         Display text for the world.
+    #  @param textColor    Color for the world display text.
+    #  @param fillColor    Color for the world.
+    #  @param outlineColor Color for the world outline.
+    def add_world(self, text=None, textColor=None, fillColor=None, outlineColor=None):
         # Check arguments
-        _color = exception.arg_check(_color, color.Color)
-        text = exception.arg_check(text, str)
+        text         = exception.arg_check(text,      str,         '')
+        textColor    = exception.arg_check(fillColor, color.Color, _SYSTEM_FONT_COLOR)
+        fillColor    = exception.arg_check(fillColor, color.Color, _WORLD_COLOR)
+        outlineColor = exception.arg_check(fillColor, color.Color, _WORLD_COLOR)
+        
         # Add world data to list
-        self._world.append((_color, text))
+        self._world.append((text, textColor, fillColor, outlineColor))
 
     ## Draw hex.
     #  @param self The object pointer.
     def draw(self):
-        # Calculate center
+        # Calculate center.
         (cX, cY) = (int(self._width/2), int(self._height/2))
-        # Blank image before drawing
+
+        # Blank image before drawing.
         if not(self.fgWorkingImage is None):
             self.fgWorkingImage.close()
         self.fgWorkingImage = pilimage.new("RGBA", (self._width, self._height))
         if not(self.bgWorkingImage is None):
             self.bgWorkingImage.close()
         self.bgWorkingImage = pilimage.new("RGBA", (self._width, self._height))
-        # Draw background
-        bgDrawingImage = pildraw.Draw(self.bgWorkingImage)
 
-        # Draw foreground
+        # Draw background.
+        bgDrawingImage = pildraw.Draw(self.bgWorkingImage)
+        # Draw foreground.
         fgDrawingImage = pildraw.Draw(self.fgWorkingImage)
 
-        # Draw vertex triangles
-        # Draw system
+        # Draw vertex triangles.
+        # Draw system.
         if not (self._systemName is None):
             fgDrawingImage.ellipse([(cX-self._systemDiameter/2, cY-self._systemDiameter/2),
                                     (cX+self._systemDiameter/2, cY+self._systemDiameter/2)],
                                    outline = self._systemColorOutline.rgba(),
                                    fill    = self._systemColor.rgba())
-        # Draw world
-        # Draw world text
-        # Draw name
+            
+            # Get system name text size.
+            nameWidth, nameHeight = fgDrawingImage.textsize(self._systemName,
+                                                            font=self._systemFont)
+            # System text center position.
+            nameTextCenter = (int(cX-nameWidth/2.), int(cY-nameHeight/2.+self._systemFontMargin))
+            # Draw system name text.
+            fgDrawingImage.text(nameTextCenter,
+                                self._systemName.upper(),
+                                fill=_SYSTEM_FONT_COLOR.rgba(),
+                                font=self._systemFont)
+        # Draw worlds.
+        numWorlds = len(self._world)
+        for wIndex in xrange(numWorlds):
+            # Get world info.
+            wText         = self._world[wIndex][0]
+            wTextColor    = self._world[wIndex][1]
+            wFillColor    = self._world[wIndex][2]
+            wOutlineColor = self._world[wIndex][3]
+            # Determine world position.
+            # Angle (0 is right, 90 is up)
+            angleDeg  = float(90)
+            angleDeg += (float(_ANGLE_BETWEEN_WORLDS)/2.)*float(numWorlds-1.)
+            angleDeg += -float(_ANGLE_BETWEEN_WORLDS)*float(wIndex)
+            # X and Y components of orbit radius
+            cosRadius = int(math.cos(angleDeg*math.pi/180.)*self._worldOrbitDiameter/2.)
+            sinRadius = int(math.sin(angleDeg*math.pi/180.)*self._worldOrbitDiameter/2.)
+            # World center position
+            worldCenter = (int(cX+cosRadius), int(cY-sinRadius))
+            # Draw world.
+            fgDrawingImage.ellipse([(worldCenter[0]-self._worldDiamater/2, int(worldCenter[1]-self._worldDiamater/2)),
+                                    (worldCenter[0]+self._worldDiamater/2, int(worldCenter[1]+self._worldDiamater/2))],
+                                   outline = wOutlineColor.rgba(),
+                                   fill    = wFillColor.rgba())
+            # Get text size.
+            textWidth, textHeight = fgDrawingImage.textsize(wText,font=self._worldFont)
+            # X and Y components of orbit text radius.
+            cosRadius = int(math.cos(angleDeg*math.pi/180.)*(self._worldOrbitDiameter/2.+self._worldFontMargin))
+            sinRadius = int(math.sin(angleDeg*math.pi/180.)*(self._worldOrbitDiameter/2.+self._worldFontMargin))
+            # World text center position.
+            worldTextCenter = (int(cX+cosRadius), int(cY-sinRadius))
+            # Draw world text.
+            fgDrawingImage.text((worldTextCenter[0]-textWidth/2,worldTextCenter[1]-textHeight/2),
+                                wText, 
+                                fill=wTextColor.rgba(),
+                                font=self._worldFont)
 
     ## Reset hex data.
     #  @param self The object pointer.
@@ -341,7 +361,7 @@ class Hex(object):
         # Blank each vertex
         self._vertexColors = [color.NONE] * 6
         # Blank worlds
-        self._world = list()
+        self.reset_worlds()
 
     ## Reset world data.
     def reset_worlds(self):

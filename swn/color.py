@@ -63,7 +63,7 @@ ORANGE         = Color(255,100,0)
 RED            = Color(255,0,0)
 YELLOW         = Color(255,255,0)
 WHITE          = Color(255,255,255)
-GREY           = Color(150,150,150)
+GREY           = Color(128,128,128)
 # Light colors
 LIGHT_GREY     = Color(200,200,200)
 # Dark colors

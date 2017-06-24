@@ -452,8 +452,13 @@ class Sector(object):
         systemData = self.hexes[(hRow,hCol)].system
         # Get hex image.
         hexImage = self.images.hexMap.hexInfo[(hRow,hCol)]
+        # Reset hex image.
+        hexImage.reset()
         # Add system to hex image
         hexImage.add_system(systemData.name)
+        # Add worlds to hex image
+        for w in systemData.sorted_worlds():
+            hexImage.add_world(text=w.techLevel)
 
     ## Update images with sector data.
     def update_images(self):
