@@ -108,7 +108,7 @@ TABLE_TAGS = {
         7:  'Major Spaceyard',
         8:  'Minimal Contact',
         9:  'Misandry/Misogyny',
-        10: 'Ocanic World'
+        10: 'Oceanic World'
     },
     4:  {
         1:  'Out of Contact',

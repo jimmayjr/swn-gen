@@ -58,7 +58,8 @@ class Sector(object):
 
         self.routes = list()
         # Images
-        self.images = image.SectorImage(self.majorRow,
+        self.images = image.SectorImage(self.name,
+                                        self.majorRow,
                                         self.majorCol,
                                         self._rows,
                                         self._cols)
@@ -221,13 +222,13 @@ class Sector(object):
         table.add_heading('Hex')
         table.add_heading('System')
         table.add_heading('World')
+        table.add_heading('TL')
         table.add_heading('Atmosphere')
         table.add_heading('Biosphere')
         table.add_heading('Population')
         table.add_heading('Pop. Alt.','R')
         table.add_heading('Tags')
         table.add_heading('Temperature')
-        table.add_heading('TL')
         # Add rows
         wIndex = 1
         for systemKey in self.sorted_systems():
@@ -243,7 +244,10 @@ class Sector(object):
                 if ( firstWorld ):
                     firstWorld = False
                     # Hex
-                    row.append('0{0}0{1}'.format(systemKey[0],systemKey[1]))
+                    row.append('{mc}{hc}{mr}{hr}'.format(mc=self.majorCol,
+                                                         hc=systemKey[0],
+                                                         mr=self.majorRow,
+                                                         hr=systemKey[1]))
                     # System name
                     row.append(system.name)
                 else:
@@ -253,6 +257,8 @@ class Sector(object):
                     row.append('')
                 # World name
                 row.append(w.name)
+                # TL
+                row.append(w.techLevel)
                 # Atmosphere
                 row.append(w.atmosphere)
                 # Biosphere
@@ -265,8 +271,6 @@ class Sector(object):
                 row.append(w.tags[0] + ', ' + w.tags[1])
                 # Temperature
                 row.append(w.temperature)
-                # TL
-                row.append(w.techLevel)
                 # Add row
                 table.add_row(row)
                 # Update world index
@@ -276,7 +280,7 @@ class Sector(object):
 
     ## Print sector hex map.
     def print_sector_map(self,
-                       coords = None):
+                         coords = None):
         # Process arguments
         coords = exception.arg_check(coords,bool,False)
         # Create hexmap
@@ -296,7 +300,7 @@ class Sector(object):
 
     ## Sort systems by hex numbering.
     def sorted_systems(self):
-        return(sorted(self.system_hex_list(),key=lambda e: (e[1], e[0])))
+        return(sorted(self.system_hex_list(), key=lambda e: (e[0], e[1])))
 
     ## Calculate hex distances between all systems.
     def system_distances(self):
@@ -466,7 +470,26 @@ class Sector(object):
         for (hRow,hCol) in self.system_hex_list():
             self.update_hex_image(hRow,hCol)
             
-
         # World info table.
+        infoTable = self.images.infoTable
+        # For each hex with a system.
+        for (hRow,hCol) in self.system_hex_list():
+            systemData = self.hexes[(hRow,hCol)].system
+            # For each world.
+            for w in systemData.sorted_worlds():
+                infoTable.add_world(self.majorRow,
+                                    self.majorCol,
+                                    hRow, 
+                                    hCol, 
+                                    systemData.name,
+                                    w.name,
+                                    w.techLevel,
+                                    w.atmosphere,
+                                    w.biosphere, 
+                                    w.population,
+                                    w.population_alt_text(),
+                                    w.tags,
+                                    w.temperature,
+                                    [])
 
         # Orbit diagram.

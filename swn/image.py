@@ -28,24 +28,26 @@ _SECTOR_LEFT_MARGIN_RATIO   = 0.02
 _SECTOR_RIGHT_MARGIN_RATIO  = 0.02
 
 # Drawing specifications -------------------------------------------------------
+_ANGLE_BETWEEN_WORLDS        = 60
 _IMAGE_BACKGROUND            = os.path.join(_DIR_PATH,'images/starfield.png')
 _IMAGE_BACKGROUND_BRIGHTNESS = 0.8
+_FACTION_ALPHA               = 35
+_GRID_WIDTH_RATIO            = 2./1500.
+_GRID_COLOR                  = color.THEME_GREY
+_GRID_ALPHA                  = 200
+_INFO_TABLE_TITLE_ROWS       = 3
 _ROUTE_WIDTH_RATIO           = 1./10.
 _ROUTE_BLUR_SIZE_RATIO       = 0.6
 _ROUTE_COLOR                 = (179,235,250,100)
-_GRID_WIDTH_RATIO            = 3./1500.
-_GRID_COLOR                  = color.THEME_GREY
-_GRID_ALPHA                  = 200
 _STAR_DIAMETER_RATIO         = 1./5.
 _SYSTEM_OUTLINE_COLOR        = color.BLACK
 _SYSTEM_COLOR                = color.LIGHT_GREY
-_ANGLE_BETWEEN_WORLDS        = 60
-_WORLD_ORBIT_RADIUS_RATIO    = 1./3.
-_WORLD_DIAMETER_RATIO        = 1./9.
-_WORLD_COLOR                 = color.LIGHT_GREY
 _TRIANGLE_LENGTH_RATIO       = 1./6.
 _TRIANGLE_MARGIN_RATIO       = 1./40.
-_FACTION_ALPHA               = 35
+_WORLD_ORBIT_RADIUS_RATIO    = 1./3.
+_WORLD_DIAMETER_RATIO        = 1./9.
+_WORLD_INFO_MARGIN_RATIO     = 1./4.
+_WORLD_COLOR                 = color.LIGHT_GREY
 
 # Font specifications
 _FONT_FILENAME               = os.path.join(_DIR_PATH,'fonts/mplus-1m-regular.ttf')
@@ -55,8 +57,10 @@ _HEX_NUM_MARGIN_RATIO        = 1./18.
 _SYSTEM_NAME_FONT_SIZE_RATIO = 1./6.5
 _SYSTEM_FONT_COLOR           = color.LIGHT_GREY
 _SYSTEM_NAME_MARGIN_RATIO    = 1./6.
+_INFO_FONT_COLOR             = color.LIGHT_GREY
 _INFO_FONT_SIZE_RATIO        = 1./6.
-_INFO_MARGIN_RATIO           = 1./4.
+_TABLE_FONT_SIZE_RATIO       = 2./3.
+_TABLE_TITLE_FONT_SIZE_RATIO = 2.
 _SECTOR_FONT_FILENAME        = _FONT_FILENAME
 _LIST_FONT_FILENAME          = _FONT_FILENAME
 
@@ -101,12 +105,12 @@ class HexGrid(object):
         self._gridColor  = exception.arg_check(gridColor, color.Color, _GRID_COLOR)
 
         # Set grid parameters.
-        self._set_parameters(self._width, 
-                             self._height, 
-                             self._hexSize,  
-                             self._leftMargin, 
-                             self._topMargin,
-                             self._gridColor)
+        self._set_params(self._width, 
+                         self._height, 
+                         self._hexSize,  
+                         self._leftMargin, 
+                         self._topMargin,
+                         self._gridColor)
 
         # Working image. Leave as None until ready to draw.
         self.workingImage = None
@@ -158,13 +162,13 @@ class HexGrid(object):
     #  @param leftMargin Left margin of the grid image [px].
     #  @param topMargin  Top margin of the grid image [px].
     #  @param gridColor  Color of gridlines.
-    def _set_parameters(self,
-                        width      = None,
-                        height     = None,
-                        hexSize    = None,
-                        leftMargin = None,
-                        topMargin  = None,
-                        gridColor  = None):
+    def _set_params(self,
+                    width      = None,
+                    height     = None,
+                    hexSize    = None,
+                    leftMargin = None,
+                    topMargin  = None,
+                    gridColor  = None):
         # Check arguments
         self._width      = exception.arg_check(width,      int,         self._width)
         self._height     = exception.arg_check(height,     int,         self._height)
@@ -245,7 +249,7 @@ class Hex(object):
         self._worldOrbitDiameter = int(self._height*_WORLD_ORBIT_RADIUS_RATIO)
         worldFontSize            = int(self._height*_INFO_FONT_SIZE_RATIO)
         self._worldFont          = pilfont.truetype(_FONT_FILENAME, worldFontSize, encoding="unic")
-        self._worldFontMargin    = int(self._hexSize*_INFO_MARGIN_RATIO)
+        self._worldFontMargin    = int(self._hexSize*_WORLD_INFO_MARGIN_RATIO)
         # Vertex info data.
         self._triangleLength = int(hexSize*_TRIANGLE_LENGTH_RATIO)
         self._triangleMargin = int(self._height*_TRIANGLE_MARGIN_RATIO)
@@ -374,7 +378,7 @@ class Hex(object):
         # Check arguments
         exception.arg_check(hexSize, float)
         # Set hex parameters.
-        self._set_parameters(self._hexSize)
+        self._set_params(self._hexSize)
 
     ## Set vertex color.
     #  @param self The object pointer.
@@ -429,12 +433,12 @@ class HexMap(object):
         self._background = exception.arg_check(background, pilimage.Image, pilimage.new("RGBA", (width,height), color=color.BLACK.rgba()))
 
         # Set map size.
-        self._set_parameters(self._width, 
-                             self._height, 
-                             self._leftMargin, 
-                             self._topMargin, 
-                             self._gridColor, 
-                             self._background)
+        self._set_params(self._width, 
+                         self._height, 
+                         self._leftMargin, 
+                         self._topMargin, 
+                         self._gridColor, 
+                         self._background)
 
         # Working image. Leave as None until ready to draw.
         self._workingImage = None
@@ -462,13 +466,13 @@ class HexMap(object):
     #  @param topMargin  Top margin in pixels.
     #  @param gridColor  Color of gridlines.
     #  @param background Background image.
-    def _set_parameters(self, 
-                        width      = None, 
-                        height     = None, 
-                        leftMargin = None, 
-                        topMargin  = None, 
-                        gridColor  = None, 
-                        background = None):
+    def _set_params(self, 
+                    width      = None, 
+                    height     = None, 
+                    leftMargin = None, 
+                    topMargin  = None, 
+                    gridColor  = None, 
+                    background = None):
         # Check arguments
         self._width      = exception.arg_check(width,      int,            self._width)
         self._height     = exception.arg_check(height,     int,            self._height)
@@ -557,10 +561,547 @@ class HexMap(object):
 
         # Paste background
         for tile in xrange(bgTile):
-            saveImage.paste(bgResize, box=((tile)*self._width,0), mask=bgResize)
+            saveImage.paste(bgResize, box=((tile)*bgWidth,0), mask=bgResize)
 
         # Paste working image
         saveImage.paste(self._workingImage, box=(0,0), mask=self._workingImage)
+
+        # Resize/scale down with antialiasing to smooth jagged lines
+        saveImage = saveImage.resize((self._width/_SECTOR_IMAGE_SCALE, 
+                                      self._height/_SECTOR_IMAGE_SCALE),
+                                     pilimage.LANCZOS)
+
+        # Save image
+        saveImage.save(path)
+
+## Sector information table class.
+#
+#  The sector information table class is used to create images of an SWN sector.
+class InfoTable(object):
+    ## Sector information table image class constructor.
+    #  @param self       The object pointer.
+    #  @param sectorName Name of the sector.
+    #  @param height     Hex map height in pixels.
+    #  @param topMargin    Top margin in pixels.
+    #  @param bottomMargin Bottom margin in pixels.
+    #  @param leftMargin   Left margin in pixels.
+    #  @param rightMargin  Right margin in pixels.
+    #  @param background Background image.
+    def __init__(self, 
+                 sectorName, 
+                 height, 
+                 topMargin    = None,
+                 bottomMargin = None,
+                 leftMargin   = None,
+                 rightMargin  = None,
+                 background   = None):
+        # Check arguments.
+        self._sectorName   = exception.arg_check(sectorName,   str)
+        self._height       = exception.arg_check(height,       int)
+        self._topMargin    = exception.arg_check(topMargin,    int, 0)
+        self._bottomMargin = exception.arg_check(bottomMargin, int, 0)
+        self._leftMargin   = exception.arg_check(leftMargin,   int, 0)
+        self._rightMargin  = exception.arg_check(rightMargin,  int, 0)
+        self._background   = exception.arg_check(background,   pilimage.Image, pilimage.new("RGBA", (height,height), color=color.BLACK.rgba()))
+
+        # Set parameters.
+        self._set_params(self._height,
+                         self._topMargin,
+                         self._bottomMargin,
+                         self._leftMargin,
+                         self._rightMargin)
+        
+        # Dictionary of information about each hex.
+        self._hexInfo    = dict()
+
+        # Working image. Leave as None until ready to draw.
+        self._workingImage = None
+
+    ## Set information table image parameters.
+    #  @param self         The object pointer.
+    #  @param height       Hex map height in pixels.
+    #  @param topMargin    Top margin in pixels.
+    #  @param bottomMargin Bottom margin in pixels.
+    #  @param leftMargin   Left margin in pixels.
+    #  @param rightMargin  Right margin in pixels.
+    def _set_params(self, 
+                    height       = None,
+                    topMargin    = None,
+                    bottomMargin = None,
+                    leftMargin   = None,
+                    rightMargin  = None):
+        # Check arguments
+        self._height       = exception.arg_check(height,       int,            self._height)
+        self._topMargin    = exception.arg_check(topMargin,    int,            self._topMargin)
+        self._bottomMargin = exception.arg_check(bottomMargin, int,            self._bottomMargin)
+        self._leftMargin   = exception.arg_check(leftMargin,   int,            self._leftMargin)
+        self._rightMargin  = exception.arg_check(rightMargin,  int,            self._rightMargin)
+
+    #  @param majorRow   Major row of sector.
+    #  @param majorCol   Major column of sector.
+    def add_world(self,
+                  majorRow,
+                  majorCol,
+                  hRow, 
+                  hCol, 
+                  systemName,
+                  worldName,
+                  techLevel,
+                  atmosphere,
+                  biosphere, 
+                  population,
+                  populationAlt,
+                  tags,
+                  temperature,
+                  advisory=None):
+
+        # Check arguments.
+        exception.arg_check(majorRow,       int,  '')
+        exception.arg_range_check(majorRow, 0, 9)
+        exception.arg_check(majorCol,       int,  '')
+        exception.arg_range_check(majorCol, 0, 9)
+        exception.arg_check(hRow,           int,  '')
+        exception.arg_range_check(hRow,     0, 9)
+        exception.arg_check(hCol,           int,  '')
+        exception.arg_range_check(hCol,     0, 9)
+        exception.arg_check(systemName,     str,  '')
+        exception.arg_check(worldName,      str,  '')
+        exception.arg_check(techLevel,      str,  '')
+        exception.arg_check(atmosphere,     str,  '')
+        exception.arg_check(biosphere,      str,  '')
+        exception.arg_check(population,     str,  '')
+        exception.arg_check(populationAlt,  str,  '')
+        exception.arg_check(tags,           list, '')
+        for t in tags:
+            exception.arg_check(t,          str,  '')
+        exception.arg_check(temperature,    str,  '')
+        exception.arg_check(advisory,       list, list())
+        for a in advisory:
+            exception.arg_check(a,          str,  '')
+
+        # Calculate hex string
+        hexString = '{mc}{hc}{mr}{hr}'.format(mc=majorCol,
+                                              hc=hCol,
+                                              mr=majorRow,
+                                              hr=hRow)
+
+        # Check to see if any system in hex.
+        tableKey = (hexString, systemName)
+        if (not self._hexInfo.has_key(tableKey)):
+            self._hexInfo[tableKey] = dict()
+        # Add world to hex system.
+        self._hexInfo[tableKey][worldName] = {'hex':           hexString,
+                                              'system':        systemName,
+                                              'world':         worldName,
+                                              'techLevel':     techLevel,
+                                              'atmosphere':    atmosphere,
+                                              'biosphere':     biosphere,
+                                              'temperature':   temperature,
+                                              'population':    population,
+                                              'populationAlt': populationAlt,
+                                              'tags':          ', '.join(tags),
+                                              'advisory':      ', '.join(advisory)}
+
+    def draw(self, gm=False):
+        # Blank image before drawing
+        if not (self._workingImage is None):
+            self._workingImage.close()
+
+        # Number of worlds.
+        numWorlds = 0
+        for hexKey in self._hexInfo.iterkeys():
+            numWorlds += len(self._hexInfo[hexKey])
+
+        # Number of rows.
+        #    # of title rows + 1 heading row + # of worlds.
+        numRows = _INFO_TABLE_TITLE_ROWS + 1 + numWorlds
+
+        # Drawable info table height.
+        infoHeight = self._height - self._topMargin - self._bottomMargin
+
+        # Calculate row height based on the number of worlds.
+        rowHeight = int(float(infoHeight)/float(numRows))
+        # For a small number of worlds, lower the row height so the image isn't
+        # really wide.
+        if (numWorlds < 15):
+            rowHeight = int(float(infoHeight)/float(40))
+
+        # Default column width calculations to be based on the heading titles.
+        # Add 2 to each length for a space on either side of value.
+        maxIndex  = len('#')+2
+        maxHex    = len('0000')+2
+        maxSystem = len('System')+2
+        maxWorld  = len('World')+2
+        maxTL     = len('TL')+2
+        maxAtmo   = len('Atmosphere')+2
+        maxBio    = len('Biosphere')+2
+        maxTemp   = len('Temperature')+2
+        maxPop    = len('Population')+2
+        maxPopAlt = len('Pop. Alt.')+2
+        if (gm):
+            maxTags   = len('Tags')+2
+        maxAdvis  = len('Advisory')+2
+
+        # For each system hex.
+        worldCount = 0
+        for hexKey in self._hexInfo.iterkeys():
+            hexDict = self._hexInfo[hexKey]
+            # For each world.
+            for worldKey in hexDict.iterkeys():
+                worldCount += 1
+                # Get world info
+                worldDict = hexDict[worldKey]
+                # Add 2 to each length for a space on either side of value.
+                maxIndex  = max(maxIndex,  len(str(worldCount))+2)
+                maxSystem = max(maxSystem, len(worldDict['system'])+2)
+                maxWorld  = max(maxWorld,  len(worldDict['world'])+2)
+                maxTL     = max(maxTL,     len(worldDict['techLevel'])+2)
+                maxAtmo   = max(maxAtmo,   len(worldDict['atmosphere'])+2)
+                maxBio    = max(maxBio,    len(worldDict['biosphere'])+2)
+                maxTemp   = max(maxTemp,   len(worldDict['temperature'])+2)
+                maxPop    = max(maxPop,    len(worldDict['population'])+2)
+                maxPopAlt = max(maxPopAlt, len(str(worldDict['populationAlt']))+2)
+                if (gm):
+                    maxTags   = max(maxTags,   len(worldDict['tags'])+2)
+                maxAdvis  = max(maxAdvis,  len(worldDict['advisory'])+2)
+
+        # Total row columns.
+        maxRow  = maxIndex + maxHex + maxSystem + maxWorld + maxTL + maxAtmo
+        maxRow += maxBio + maxTemp + maxPop + maxPopAlt + maxAdvis
+        if (gm):
+            maxRow += maxTags
+
+        # Column fractions.
+        indexFraction  = float(maxIndex)/float(maxRow)
+        hexFraction    = float(maxHex)/float(maxRow)
+        systemFraction = float(maxSystem)/float(maxRow)
+        worldFraction  = float(maxWorld)/float(maxRow)
+        tlFraction     = float(maxTL)/float(maxRow)
+        atmoFraction   = float(maxAtmo)/float(maxRow)
+        bioFraction    = float(maxBio)/float(maxRow)
+        tempFraction   = float(maxTemp)/float(maxRow)
+        popFraction    = float(maxPop)/float(maxRow)
+        popAltFraction = float(maxPopAlt)/float(maxRow)
+        if (gm):
+            tagsFraction   = float(maxTags)/float(maxRow)
+        advisFraction  = float(maxAdvis)/float(maxRow)
+
+        # Title font.
+        titleFontSize = int(rowHeight*_TABLE_TITLE_FONT_SIZE_RATIO)
+        titleFont     = pilfont.truetype(_SECTOR_FONT_FILENAME, titleFontSize, encoding="unic")
+
+        # Text font.
+        listFontSize = int(rowHeight*_TABLE_FONT_SIZE_RATIO)
+        listFont     = pilfont.truetype(_LIST_FONT_FILENAME, listFontSize, encoding="unic")
+
+        # Temporary working image to use texsize for calculations
+        self._workingImage = pilimage.new("RGBA", (25, 25))
+        drawingImage = pildraw.Draw(self._workingImage)
+
+        # Font character size.
+        wChar,hChar  = drawingImage.textsize('|',font=listFont)
+        # Font text margin.
+        listFontMargin = (rowHeight-hChar)/2.0
+
+        # List width.
+        listWidth = maxRow*drawingImage.textsize('A',font=listFont)[0]
+        # Image width.
+        self._width = listWidth + self._leftMargin + self._rightMargin
+
+        # Prepare drawing image.
+        self._workingImage = pilimage.new("RGBA", (self._width, self._height))
+        drawingImage = pildraw.Draw(self._workingImage)
+
+        # Draw heading background.
+        # Add 1 to fill in background of title and heading names.
+        titleBackgroundHeight   = rowHeight*(_INFO_TABLE_TITLE_ROWS)
+        headingBackgroundHeight = titleBackgroundHeight + rowHeight
+        drawingImage.rectangle([(self._leftMargin,
+                                 self._topMargin),
+                                (self._leftMargin+listWidth,
+                                 self._topMargin+headingBackgroundHeight)],
+                               fill=_INFO_FONT_COLOR.rgba(50))
+
+        # Draw sector name.
+        wSectorName, hSectorName = drawingImage.textsize(self._sectorName, font=titleFont)
+        drawingImage.text((int(self._leftMargin+(listWidth-wSectorName)/2.0),
+                           int(self._leftMargin+(rowHeight*3.0*0.85-hSectorName)/2.0)),
+                          self._sectorName,
+                          fill=_INFO_FONT_COLOR.rgba(),
+                          font=titleFont)
+
+        # Calculate pixel offsets for each column line.
+        columnOffsets = list()
+        columnOffsets.append(float(self._leftMargin)/float(listWidth))
+        columnOffsets.append(indexFraction)
+        columnOffsets.append(hexFraction)
+        columnOffsets.append(systemFraction)
+        columnOffsets.append(worldFraction)
+        columnOffsets.append(tlFraction)
+        columnOffsets.append(atmoFraction)
+        columnOffsets.append(bioFraction)
+        columnOffsets.append(tempFraction)
+        columnOffsets.append(popFraction)
+        columnOffsets.append(popAltFraction)
+        if (gm):
+            columnOffsets.append(tagsFraction)
+        columnOffsets.append(advisFraction)
+        # Initialize current pixel offsets for drawing column lines.
+        currentXOffset = 0
+        currentYOffset = self._topMargin + titleBackgroundHeight
+        # Draw each column line.
+        for co in columnOffsets:
+            # Update x offset for this column.
+            currentXOffset += int(co*listWidth)
+            # Draw line.
+            drawingImage.line([(currentXOffset, currentYOffset),
+                               (currentXOffset, currentYOffset+rowHeight*(worldCount+1))],
+                              fill=_GRID_COLOR.rgba(),
+                              width=int(_GRID_WIDTH_RATIO*self._width))
+            # Draw title side borders.
+            if (co is columnOffsets[0]) or (co is columnOffsets[len(columnOffsets)-1]):
+                drawingImage.line([(currentXOffset, self._topMargin),
+                                   (currentXOffset, currentYOffset)],
+                                  fill=_GRID_COLOR.rgba(),
+                                  width=int(_GRID_WIDTH_RATIO*self._width))
+
+        # Initialize current pixel offsets for drawing row lines.
+        currentXOffset = self._leftMargin
+        currentYOffset = self._topMargin
+        # Draw top border line.
+        drawingImage.line([(currentXOffset,             currentYOffset),
+                           (self._leftMargin+listWidth, currentYOffset)],
+                          fill=_GRID_COLOR.rgba(),
+                          width=int(_GRID_WIDTH_RATIO*self._width))
+        # Move offset to top of heading row.
+        currentYOffset += titleBackgroundHeight
+        # Draw heading row line.
+        drawingImage.line([(currentXOffset,             currentYOffset),
+                           (self._leftMargin+listWidth, currentYOffset)],
+                          fill=_GRID_COLOR.rgba(),
+                          width=int(_GRID_WIDTH_RATIO*self._width))
+        # Draw world index heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'#'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int((indexFraction)*listWidth)
+        # Draw hex heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'Hex'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(hexFraction*listWidth)
+        # Draw system heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'System'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(systemFraction*listWidth)
+        # Draw world heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'World'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(worldFraction*listWidth)
+        # Draw TL heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'TL'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(tlFraction*listWidth)
+        # Draw atmosphere heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'Atmosphere'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(atmoFraction*listWidth)
+        # Draw temperature heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'Temperature'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(bioFraction*listWidth)
+        # Draw biosphere heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'Biosphere'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(tempFraction*listWidth)
+        # Draw population heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'Population'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(popFraction*listWidth)
+        # Draw population alternate heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'Pop. Alt.'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        currentXOffset += int(popAltFraction*listWidth)
+        if (gm):
+            # Draw tags heading.
+            drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                              ' '+'Tags'+' ',
+                              fill=_INFO_FONT_COLOR.rgba(), 
+                              font=listFont)
+            currentXOffset += int(tagsFraction*listWidth)
+        # Draw advisory heading.
+        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                          ' '+'Advisory'+' ',
+                          fill=_INFO_FONT_COLOR.rgba(), 
+                          font=listFont)
+        # Update offsets.
+        currentXOffset = self._leftMargin
+        currentYOffset += rowHeight
+        # For each system hex.
+        worldCount = 0
+        for hexKey in sorted(self._hexInfo.iterkeys(), key=lambda key: key[0]):
+            hexDict = self._hexInfo[hexKey]
+            # Draw hex and system part of row line.
+            drawingImage.line([(currentXOffset+int(indexFraction*listWidth), 
+                                currentYOffset),
+                               (currentXOffset+int((indexFraction+hexFraction+systemFraction)*listWidth), 
+                                currentYOffset)],
+                              fill=_GRID_COLOR.rgba(),
+                              width=int(_GRID_WIDTH_RATIO*self._width))
+            # Draw hex.
+            drawingImage.text((currentXOffset+int(indexFraction*listWidth), 
+                              currentYOffset+int(rowHeight*len(hexDict.keys())/2.)-int(rowHeight/2.)+listFontMargin), 
+                                  ' '+hexKey[0]+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+            # Draw system.
+            drawingImage.text((currentXOffset+int((indexFraction+hexFraction)*listWidth), 
+                              currentYOffset+int(rowHeight*len(hexDict.keys())/2.)-int(rowHeight/2.)+listFontMargin), 
+                                  ' '+hexKey[1]+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+            # For each world.
+            for worldKey in hexDict.iterkeys():
+                worldCount += 1
+                # Draw left side of row line.
+                drawingImage.line([(currentXOffset,                              currentYOffset),
+                                   (currentXOffset+int(indexFraction*listWidth), currentYOffset)],
+                                  fill=_GRID_COLOR.rgba(),
+                                  width=int(_GRID_WIDTH_RATIO*self._width))
+                currentXOffset += int((indexFraction+hexFraction+systemFraction)*listWidth)
+                # Draw right side row line.
+                drawingImage.line([(currentXOffset,             currentYOffset),
+                                   (self._leftMargin+listWidth, currentYOffset)],
+                                  fill=_GRID_COLOR.rgba(),
+                                  width=int(_GRID_WIDTH_RATIO*self._width))
+                currentXOffset = self._leftMargin
+                # Draw world index.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+str(worldCount).rjust(maxIndex-2)+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int((indexFraction+hexFraction+systemFraction)*listWidth)
+                # Draw world.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+self._hexInfo[hexKey][worldKey]['world']+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int(worldFraction*listWidth)
+                # Draw TL.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+self._hexInfo[hexKey][worldKey]['techLevel']+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int(tlFraction*listWidth)
+                # Draw atmosphere.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+self._hexInfo[hexKey][worldKey]['atmosphere']+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int(atmoFraction*listWidth)
+                # Draw biosphere.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+self._hexInfo[hexKey][worldKey]['biosphere']+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int(bioFraction*listWidth)
+                # Draw temperature.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+self._hexInfo[hexKey][worldKey]['temperature']+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int(tempFraction*listWidth)
+                # Draw population.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+self._hexInfo[hexKey][worldKey]['population']+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int(popFraction*listWidth)
+                # Draw population alternate.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+str(self._hexInfo[hexKey][worldKey]['populationAlt']).rjust(maxPopAlt-2)+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int(popAltFraction*listWidth)
+                if (gm):
+                    # Draw tags.
+                    drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                      ' '+self._hexInfo[hexKey][worldKey]['tags']+' ', 
+                                      fill=_INFO_FONT_COLOR.rgba(), 
+                                      font=listFont)
+                    currentXOffset += int(tagsFraction*listWidth)
+                # Draw advisory.
+                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                  ' '+self._hexInfo[hexKey][worldKey]['advisory']+' ', 
+                                  fill=_INFO_FONT_COLOR.rgba(), 
+                                  font=listFont)
+                currentXOffset += int(advisFraction*listWidth)
+
+                # Update offsets.
+                currentXOffset  = self._leftMargin
+                currentYOffset += rowHeight
+        # Draw bottom border line.
+        drawingImage.line([(currentXOffset,             currentYOffset),
+                           (self._leftMargin+listWidth, currentYOffset)],
+                          fill=_GRID_COLOR.rgba(),
+                          width=int(_GRID_WIDTH_RATIO*self._width))
+
+    ## Resize info table.
+    #
+    def resize(self, height):
+        # Check arguments.
+        exception.arg_check(height, int)
+        # Set parameters.
+        self._set_params(height)
+
+    ## Save info table to file.
+    def save(self, path):
+        # Check arguments
+        path = exception.arg_check(path, str)
+
+        # Draw image if it hasn't been
+        if self._workingImage is None:
+            self.draw()
+
+        # Resize background image.
+        # Get scale of actual image to background image.
+        bgScale  = float(self._height)/float(self._background.height)
+        # Calculate width assuming resizing background image height to actual 
+        # image height.
+        bgWidth  = int(math.ceil(bgScale*self._background.width))
+        # Calculate number of times background image is requred to tile to fit
+        # width.
+        bgTile   = int(math.ceil(float(self._width)/float(bgWidth)))
+        # Resize background image to match actual image height.
+        bgResize = self._background.resize((bgWidth,self._height), pilimage.LANCZOS)
+
+        # Create image to save
+        saveImage = pilimage.new('RGBA', (self._width, self._height))
+
+        # Paste background
+        for tile in xrange(bgTile):
+            saveImage.paste(bgResize, box=((tile)*bgWidth,0), mask=bgResize)
+
+        # Paste working image
+        saveImage = pilimage.alpha_composite(saveImage, self._workingImage)
 
         # Resize/scale down with antialiasing to smooth jagged lines
         saveImage = saveImage.resize((self._width/_SECTOR_IMAGE_SCALE, 
@@ -576,6 +1117,7 @@ class HexMap(object):
 class SectorImage(object):
     ## Sector image class constructor.
     #  @param self              The object pointer.
+    #  @param sectorName        Name of sector.
     #  @param majorRow          Major row of sector.
     #  @param majorCol          Major column of sector.
     #  @param rows              Number of hex rows (odd-q).
@@ -587,6 +1129,7 @@ class SectorImage(object):
     #  @param rightMarginRatio  Right margin ratio relative to width.
     #  @param gridColor         Color of gridlines.
     def __init__(self,
+                 sectorName,
                  majorRow,
                  majorCol,
                  rows,
@@ -598,6 +1141,7 @@ class SectorImage(object):
                  rightMarginRatio  = None,
                  gridColor         = _GRID_COLOR):
         # Check arguments
+        self._sectorName        = exception.arg_check(sectorName,        str)
         self._majorRow          = exception.arg_check(majorRow,          int)
         self._majorCol          = exception.arg_check(majorRow,          int)
         self._rows              = exception.arg_check(rows,              int)
@@ -620,7 +1164,7 @@ class SectorImage(object):
         # Darken background image
         self._background = pilenhance.Brightness(pilimage.open(_IMAGE_BACKGROUND).convert('RGBA')).enhance(_IMAGE_BACKGROUND_BRIGHTNESS)
 
-        # Create sector main images
+        # Create hex map.
         self.hexMap = HexMap(self._majorRow, 
                              self._majorCol, 
                              self._rows, 
@@ -632,7 +1176,15 @@ class SectorImage(object):
                              self._topMargin,
                              self._gridColor,
                              self._background)
-        #self.infoTable = InfoTable()
+        # Create info table.
+        self.infoTable = InfoTable(self._sectorName, 
+                                   self._height, 
+                                   self._topMargin,
+                                   self._bottomMargin,
+                                   self._leftMargin,
+                                   self._rightMargin,
+                                   self._background)
+        # Create orbit maps.
         #self.orbitMaps = OrbitMaps()
 
         # Create ancillary sector info images
@@ -716,7 +1268,7 @@ class SectorImage(object):
     def draw_sector(self):
         # Draw layers ----------------------------------------------------------
         self.hexMap.draw()
-        #self.infoTable.draw()
+        self.infoTable.draw()
         #self.orbitMaps.draw()
 
         # Determine width
@@ -754,7 +1306,7 @@ class SectorImage(object):
 
         # Resize sector main images
         self.hexMap.resize(hexSize)
-        #self.infoTable.resize()
+        self.infoTable.resize(height)
         #self.orbitMaps.resize()
 
 
@@ -766,8 +1318,11 @@ class SectorImage(object):
         self.hexMap.save(path)
 
     ## Save sector info table.
-    def save_sector_info(self):
-        raise Exception('Not implemented yet.')
+    def save_sector_info(self, path):
+        # Check arguments
+        path = exception.arg_check(path, str)
+        # Save hexmap
+        self.infoTable.save(path)
 
     ## Save sector orbit maps.
     def save_sector_orbits(self):
