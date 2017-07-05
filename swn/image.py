@@ -726,6 +726,21 @@ class InfoTable(object):
         if (numWorlds < 15):
             rowHeight = int(float(infoHeight)/float(40))
 
+        # Determine if there are any advisories to show.
+        advisoryFlag = False
+        # For each system hex.
+        for hexKey in self._hexInfo.iterkeys():
+            hexDict = self._hexInfo[hexKey]
+            # For each world.
+            for worldKey in hexDict.iterkeys():
+                # Get world info
+                worldDict = hexDict[worldKey]
+                if (len(worldDict['advisory']) > 0):
+                    advisoryFlag = True
+                    break
+            if (advisoryFlag):
+                break
+
         # Default column width calculations to be based on the heading titles.
         # Add 2 to each length for a space on either side of value.
         maxIndex  = len('#')+2
@@ -740,7 +755,8 @@ class InfoTable(object):
         maxPopAlt = len('Pop. Alt.')+2
         if (gm):
             maxTags   = len('Tags')+2
-        maxAdvis  = len('Advisory')+2
+        if (advisoryFlag):
+            maxAdvis  = len('Advisory')+2
 
         # For each system hex.
         worldCount = 0
@@ -763,13 +779,16 @@ class InfoTable(object):
                 maxPopAlt = max(maxPopAlt, len(str(worldDict['populationAlt']))+2)
                 if (gm):
                     maxTags   = max(maxTags,   len(worldDict['tags'])+2)
-                maxAdvis  = max(maxAdvis,  len(worldDict['advisory'])+2)
+                if (advisoryFlag):
+                    maxAdvis  = max(maxAdvis,  len(worldDict['advisory'])+2)
 
         # Total row columns.
         maxRow  = maxIndex + maxHex + maxSystem + maxWorld + maxTL + maxAtmo
-        maxRow += maxBio + maxTemp + maxPop + maxPopAlt + maxAdvis
+        maxRow += maxBio + maxTemp + maxPop + maxPopAlt
         if (gm):
             maxRow += maxTags
+        if (advisoryFlag):
+            maxRow += maxAdvis
 
         # Column fractions.
         indexFraction  = float(maxIndex)/float(maxRow)
@@ -784,7 +803,8 @@ class InfoTable(object):
         popAltFraction = float(maxPopAlt)/float(maxRow)
         if (gm):
             tagsFraction   = float(maxTags)/float(maxRow)
-        advisFraction  = float(maxAdvis)/float(maxRow)
+        if (advisoryFlag):
+            advisFraction  = float(maxAdvis)/float(maxRow)
 
         # Title font.
         titleFontSize = int(rowHeight*_TABLE_TITLE_FONT_SIZE_RATIO)
@@ -845,7 +865,8 @@ class InfoTable(object):
         columnOffsets.append(popAltFraction)
         if (gm):
             columnOffsets.append(tagsFraction)
-        columnOffsets.append(advisFraction)
+        if (advisoryFlag):
+            columnOffsets.append(advisFraction)
         # Initialize current pixel offsets for drawing column lines.
         currentXOffset = 0
         currentYOffset = self._topMargin + titleBackgroundHeight
@@ -947,11 +968,12 @@ class InfoTable(object):
                               fill=_INFO_FONT_COLOR.rgba(), 
                               font=listFont)
             currentXOffset += int(tagsFraction*listWidth)
-        # Draw advisory heading.
-        drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
-                          ' '+'Advisory'+' ',
-                          fill=_INFO_FONT_COLOR.rgba(), 
-                          font=listFont)
+        if (advisoryFlag):
+            # Draw advisory heading.
+            drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                              ' '+'Advisory'+' ',
+                              fill=_INFO_FONT_COLOR.rgba(), 
+                              font=listFont)
         # Update offsets.
         currentXOffset = self._leftMargin
         currentYOffset += rowHeight
@@ -1048,12 +1070,13 @@ class InfoTable(object):
                                       fill=_INFO_FONT_COLOR.rgba(), 
                                       font=listFont)
                     currentXOffset += int(tagsFraction*listWidth)
-                # Draw advisory.
-                drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
-                                  ' '+self._hexInfo[hexKey][worldKey]['advisory']+' ', 
-                                  fill=_INFO_FONT_COLOR.rgba(), 
-                                  font=listFont)
-                currentXOffset += int(advisFraction*listWidth)
+                if (advisoryFlag):
+                    # Draw advisory.
+                    drawingImage.text((currentXOffset, currentYOffset+listFontMargin), 
+                                      ' '+self._hexInfo[hexKey][worldKey]['advisory']+' ', 
+                                      fill=_INFO_FONT_COLOR.rgba(), 
+                                      font=listFont)
+                    currentXOffset += int(advisFraction*listWidth)
 
                 # Update offsets.
                 currentXOffset  = self._leftMargin
