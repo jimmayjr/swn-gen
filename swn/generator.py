@@ -826,6 +826,8 @@ class Generator(object):
                         if ( isStation ):
                             spaceStation = orbitalobject.SpaceStation(worldObj = oa)
                             oa.name += ' Station'
+                            # Add world as space station to rocky planet
+                            orbitalList[roi].stations.append(spaceStation)
                             break
             # If for some reason a world didn't get put into an orbit, randomly
             # insert it into the orbit list somewhere
