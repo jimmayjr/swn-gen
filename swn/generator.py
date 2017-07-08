@@ -100,7 +100,7 @@ class Generator(object):
         # Generate number of stars
         numStars = random.dice_roll(1,10,20)
         # Create list of names used
-        usedNames = dict()
+        usedNames = list()
         # Generate first 20 star system positions ------------------------------
         loopCount = 0
         sCount = 0
@@ -112,13 +112,12 @@ class Generator(object):
             # Check for empy hex
             if (newSector.hex_empty(row,col)):
                 # Hex is empty, create new star system
-                # TODO: Generate random star system name
-                #   TODO: Check all other system names for duplicates
                 nameLoopCount = 0
                 nameCheck = False
                 while (not nameCheck):
                     newSystemName = self.name_system()
-                    if ( not usedNames.has_key(newSystemName) ):
+                    if ( not (newSystemName in usedNames) ):
+                        usedNames.append(newSystemName)
                         nameCheck = True
                     nameLoopCount += 1
                     if (nameLoopCount>100):
@@ -321,7 +320,8 @@ class Generator(object):
             nameCheck = False
             while (not nameCheck):
                 newSystemName = self.name_system()
-                if ( not usedNames.has_key(newSystemName) ):
+                if ( not (newSystemName in usedNames) ):
+                    usedNames.append(newSystemName)
                     nameCheck = True
                 nameLoopCount += 1
                 if (nameLoopCount>100):
@@ -352,7 +352,8 @@ class Generator(object):
                 nameCheck = False
                 while (not nameCheck):
                     newWorldName = self.name_world()
-                    if ( not usedNames.has_key(newSystemName) ):
+                    if ( not (newWorldName in usedNames) ):
+                        usedNames.append(newWorldName)
                         nameCheck = True
                     nameLoopCount += 1
                     if (nameLoopCount>100):
@@ -397,12 +398,13 @@ class Generator(object):
             # Get current system
             systemObj = newSector.hexes[systemKey].system
             # Rolls (ORSS)
-            d4  = random.dice_roll(1,4)
-            d6  = random.dice_roll(1,6)
-            d8  = random.dice_roll(1,8)
-            d10 = random.dice_roll(1,10)
-            d12 = random.dice_roll(1,12)
-            d20 = random.dice_roll(1,20)
+            d4       = random.dice_roll(1,4)
+            d6       = random.dice_roll(1,6)
+            d8       = random.dice_roll(1,8)
+            d10_star = random.dice_roll(1,10)
+            d10_gas  = random.dice_roll(1,10)
+            d12      = random.dice_roll(1,12)
+            d20      = random.dice_roll(1,20)
             # Get main world from system (i.e. the first in the list with the highest TL)
             mainWorld = max(systemObj.worlds,key=lambda w: world.TABLE_TECH_LEVEL_REVERSE[w.techLevel])
             # Get main world orbit temperature mod
@@ -431,9 +433,10 @@ class Generator(object):
             # First star color and spectral subclass
             color            = star.TABLE_COLOR[star.TABLE_COLOR_ID[d12Mod]]
             colorText        = star.TABLE_COLOR_TEXT[d12Mod]
-            spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10]
+            sequence         = star.TABLE_COLOR_SEQUENCE[star.TABLE_COLOR_ID[d12Mod]]
+            spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10_star]
             # Add first star
-            systemObj.stars.append(star.Star(color,colorText,spectralSubclass))
+            systemObj.stars.append(star.Star(color, colorText, sequence, spectralSubclass))
             # Use modified d4 to determine if there should be a second star (ORSS)
             numStars = system.TABLE_STARS[d4Mod]
             # Add 2nd star if necessary (ORSS)
@@ -441,18 +444,19 @@ class Generator(object):
                 # 2nd star has +4 to existing d12 roll(ORSS)
                 d12Mod += 4
                 # 2nd star has alternate d10 roll (ORSS)    
-                d10Mod   = random.dice_roll(1,10)
+                d10_star2   = random.dice_roll(1,10)
                 # d12 table modifies orbit position (ORSS)
                 mainOrbit += system.TABLE_MAIN_WORLD_ORBIT_MOD[d12Mod]
                 # Second star color and spectral subclass (ORSS)
                 color            = star.TABLE_COLOR[star.TABLE_COLOR_ID[d12Mod]]
                 colorText        = star.TABLE_COLOR_TEXT[d12Mod]
-                spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10Mod]
+                sequence         = star.TABLE_COLOR_SEQUENCE[star.TABLE_COLOR_ID[d12Mod]]
+                spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10_star2 ]
                 # Add star
-                systemObj.stars.append(star.Star(color,colorText,spectralSubclass))
+                systemObj.stars.append(star.Star(color, colorText, sequence, spectralSubclass))
             # Gas giants (ORSS)
-            numSmallGas = system.TABLE_GAS_GIANT_SMALL[d10]
-            numLargeGas = system.TABLE_GAS_GIANT_LARGE[d10]
+            numSmallGas = system.TABLE_GAS_GIANT_SMALL[d10_gas]
+            numLargeGas = system.TABLE_GAS_GIANT_LARGE[d10_gas]
             # Create list of gas giants
             gasList  = [orbitalobject.Planet(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['SMALL_GAS']) for sg in xrange(numSmallGas)]
             gasList += [orbitalobject.Planet(orbitalobject.TABLE_ORBITAL_OBJECT_TYPE['LARGE_GAS']) for lg in xrange(numLargeGas)]

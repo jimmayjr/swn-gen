@@ -1,16 +1,26 @@
 #!/usr/bin/env python
 
+import color
 import exception
 
 # Tables -----------------------------------------------------------------------
 # One Roll Star System tables
-# Star colors
+# Star color text.
 TABLE_COLOR = {
     1: 'red',
     2: 'white',
     3: 'light yellow',
     4: 'yellow',
     5: 'orange'
+}
+
+# Star sequence based on color.
+TABLE_COLOR_SEQUENCE = {
+    1: 'M',
+    2: 'A',
+    3: 'F',
+    4: 'G',
+    5: 'K'
 }
 
 # Star color id and text
@@ -31,6 +41,7 @@ TABLE_COLOR_TEXT[12] = 'orange (K), size V'
 for i in xrange(13,31):
     TABLE_COLOR_ID[i]   = 1
     TABLE_COLOR_TEXT[i] = 'red dwarf (M), size V'
+
 
 # Star spectral class d12 roll modifier
 TABLE_SPECTRAL_MODIFIER = {
@@ -54,13 +65,16 @@ class Star(object):
     def __init__(self,
                  color            = None,
                  colorText        = None,
+                 classification   = None,
                  spectralSubclass = None):
         # Check arguments
         exception.arg_check(color,str,'')
         exception.arg_check(colorText,str,'')
+        exception.arg_check(classification,str,'')
         exception.arg_check(spectralSubclass,int,0)
 
         # Star information
         self.color            = color
         self.colorText        = colorText
+        self.classification   = classification
         self.spectralSubclass = spectralSubclass

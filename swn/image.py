@@ -13,6 +13,7 @@ import scipy.interpolate as spi
 import color
 import exception
 import hexutils
+import star
 
 _DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -43,6 +44,13 @@ _ROUTE_WIDTH_RATIO           = 1./10.
 _ROUTE_BLUR_SIZE_RATIO       = 0.6
 _ROUTE_COLOR                 = (179,235,250,100)
 _STAR_BLUR_RATIO             = 1./10.
+_STAR_COLOR_MAP = {
+    'red':          color.RED,
+    'white':        color.WHITE,
+    'light yellow': color.Color(255,255,150),
+    'yellow':       color.YELLOW,
+    'orange':       color.ORANGE,
+}
 _STAR_DIAMETER_RATIO         = 1./5.
 _SYSTEM_COLOR                = color.LIGHT_GREY
 _SYSTEM_MAP_HEIGHT           = 500               # px
@@ -62,12 +70,12 @@ _HEX_NUM_MARGIN_RATIO        = 1./18.
 _INFO_FONT_COLOR             = color.LIGHT_GREY
 _INFO_FONT_SIZE_RATIO        = 1./6.
 _LIST_FONT_FILENAME          = _FONT_FILENAME
+_SECTOR_FONT_FILENAME        = _FONT_FILENAME
 _SYSTEM_NAME_FONT_SIZE_RATIO = 1./6.5
 _SYSTEM_FONT_COLOR           = color.LIGHT_GREY
 _SYSTEM_NAME_MARGIN_RATIO    = 1./6.
 _TABLE_FONT_SIZE_RATIO       = 2./3.
 _TABLE_TITLE_FONT_SIZE_RATIO = 2.
-_SECTOR_FONT_FILENAME        = _FONT_FILENAME
 
 ## Hex grid class.
 #
@@ -1200,12 +1208,15 @@ class OrbitMap(object):
     class Star(object):
         def __init__(self,
                      size,
-                     _color):
+                     _color,
+                     classification):
             # Check arguments.
             # Image size.
             self._size  = exception.arg_check(size, int)
             # Planet color.
             self._color = exception.arg_check(_color, color.Color)
+            # Spectral classification.
+            self.classification = exception.arg_check(classification, str)
 
             # Star diameter.
             self._diameter = int(self._size*(1-_STAR_BLUR_RATIO))
@@ -1257,6 +1268,41 @@ class OrbitMap(object):
         # Image height.
         self._height     = exception.arg_check(height,     int, _SYSTEM_MAP_HEIGHT)
 
+        # Planets.
+        self._planets = list()
+        # Stars.
+        self._stars = list()
+
+    ## Add satellite to planet in map in map group.
+    def add_satellite(self,
+                      planetIndex,
+                      satelliteType,
+                      worldName=None):
+        pass
+
+    ## Add planet to map in map group.
+    def add_planet(self,
+                   planetType,
+                   worldName=None):
+        pass
+
+    ## Add star to system in map group.
+    def add_star(self,
+                 _color,
+                 classification,
+                 spectralSubclass):
+        # Check arguments.
+        exception.arg_check(_color,           str)
+        exception.arg_check(classification,   str)
+        exception.arg_check(spectralSubclass, int)
+
+        # Classification string.
+        classificationString = classification+str(spectralSubclass)
+        # Add star.
+        self._stars.append(self.Star(10,
+                                     _STAR_COLOR_MAP[_color],
+                                     classificationString))
+
 ## Orbit map group class.
 #
 # The orbit map group class is used to create a group of images of 
@@ -1276,7 +1322,7 @@ class OrbitMapGroup(object):
         self._margin = exception.arg_check(margin, int)
 
         # Dictionary of maps.
-        self._mapDict = dict()
+        self.maps = dict()
 
         # Working image. Leave as None until ready to draw.
         self.workingImage = None
@@ -1300,11 +1346,11 @@ class OrbitMapGroup(object):
         exception.arg_check(systemName,     str)
 
         # Check to see if system exists.
-        hexKey = (majorRow, majorCol, hRow, hCol)
-        if (self._mapDict.has_key(hexKey)):
+        hexKey = (hRow, hCol)
+        if (self.system_exists(hRow, hCol)):
             raise exception.ExistingDictKey(hexKey)
         else:
-            self._mapDict[hexKey] = OrbitMap(systemName)
+            self.maps[hexKey] = OrbitMap(systemName)
 
     ## Draw map group.
     #  @param self The object pointer.
@@ -1317,24 +1363,34 @@ class OrbitMapGroup(object):
     ## Reset hex.
     #  @param self The object pointer.
     def reset_hex(self,
-                  majorRow,
-                  majorCol,
                   hRow, 
                   hCol):
         # Check arguments.
-        exception.arg_check(majorRow,       int)
-        exception.arg_range_check(majorRow, 0, 9)
-        exception.arg_check(majorCol,       int)
-        exception.arg_range_check(majorCol, 0, 9)
         exception.arg_check(hRow,           int)
         exception.arg_range_check(hRow,     0, 9)
         exception.arg_check(hCol,           int)
         exception.arg_range_check(hCol,     0, 9)
 
         # Delete hex
-        hexKey = (majorRow, majorCol, hRow, hCol)
-        if (self._mapDict.has_key(hexKey)):
-            del self._mapDict[hexKey]
+        hexKey = (hRow, hCol)
+        if (self.maps.has_key(hexKey)):
+            del self.maps[hexKey]
+
+    ## Check to see if system exists.
+    def system_exists(self,
+                      hRow, 
+                      hCol):
+        # Check arguments.
+        exception.arg_check(hRow,       int)
+        exception.arg_range_check(hRow, 0, 9)
+        exception.arg_check(hCol,       int)
+        exception.arg_range_check(hCol, 0, 9)
+        # Check to see if system exists.
+        hexKey = (hRow, hCol)
+        if (self.maps.has_key(hexKey)):
+            return True
+        else:
+            return False
 
 
 ## Sector image class.

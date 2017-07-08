@@ -12,6 +12,7 @@ import hexinfo
 import hexutils
 import image
 import orbitalobject
+import star
 import system
 import text
 
@@ -508,13 +509,19 @@ class Sector(object):
         hRow = exception.arg_check(hRow,int)
         hCol = exception.arg_check(hCol,int)
         # Reset orbit map image.
-        orbitMapGroup.reset_hex(self.majorRow,
-                                self.majorCol,
-                                hRow, 
+        orbitMapGroup.reset_hex(hRow, 
                                 hCol)
-        # Fill out orbit map info.
+        # Create new system map.
         orbitMapGroup.add_system(self.majorRow,
                                  self.majorCol,
                                  hRow, 
                                  hCol, 
                                  systemData.name)
+        # Add stars.
+        for s in systemData.stars:
+            orbitMapGroup.maps[(hRow,hCol)].add_star(s.color,
+                                                     s.classification,
+                                                     s.spectralSubclass)
+        # Add planets and asteroid belts.
+        for o in systemData.objects:
+            pass
