@@ -29,19 +29,24 @@ _SECTOR_RIGHT_MARGIN_RATIO  = 0.02
 
 # Drawing specifications -------------------------------------------------------
 _ANGLE_BETWEEN_WORLDS        = 60
-_IMAGE_BACKGROUND            = os.path.join(_DIR_PATH,'images/starfield.png')
-_IMAGE_BACKGROUND_BRIGHTNESS = 0.8
 _FACTION_ALPHA               = 35
 _GRID_WIDTH_RATIO            = 2./1500.
 _GRID_COLOR                  = color.THEME_GREY
 _GRID_ALPHA                  = 200
+_IMAGE_BACKGROUND            = os.path.join(_DIR_PATH,'images/starfield.png')
+_IMAGE_BACKGROUND_BRIGHTNESS = 0.8
 _INFO_TABLE_TITLE_ROWS       = 3
+_PLANET_RING_ANGLE           = 30.*math.pi/180.
+_PLANET_RING_RATIO           = 8./10.
+_PLANET_RING_MARGIN_RATIO    = 1./10.
 _ROUTE_WIDTH_RATIO           = 1./10.
 _ROUTE_BLUR_SIZE_RATIO       = 0.6
 _ROUTE_COLOR                 = (179,235,250,100)
+_STAR_BLUR_RATIO             = 1./10.
 _STAR_DIAMETER_RATIO         = 1./5.
-_SYSTEM_OUTLINE_COLOR        = color.BLACK
 _SYSTEM_COLOR                = color.LIGHT_GREY
+_SYSTEM_MAP_HEIGHT           = 500               # px
+_SYSTEM_OUTLINE_COLOR        = color.BLACK
 _TRIANGLE_LENGTH_RATIO       = 1./6.
 _TRIANGLE_MARGIN_RATIO       = 1./40.
 _WORLD_ORBIT_RADIUS_RATIO    = 1./3.
@@ -54,15 +59,15 @@ _FONT_FILENAME               = os.path.join(_DIR_PATH,'fonts/mplus-1m-regular.tt
 _HEX_FONT_SIZE_RATIO         = 1./6.
 _HEX_FONT_COLOR              = color.THEME_GREY
 _HEX_NUM_MARGIN_RATIO        = 1./18.
+_INFO_FONT_COLOR             = color.LIGHT_GREY
+_INFO_FONT_SIZE_RATIO        = 1./6.
+_LIST_FONT_FILENAME          = _FONT_FILENAME
 _SYSTEM_NAME_FONT_SIZE_RATIO = 1./6.5
 _SYSTEM_FONT_COLOR           = color.LIGHT_GREY
 _SYSTEM_NAME_MARGIN_RATIO    = 1./6.
-_INFO_FONT_COLOR             = color.LIGHT_GREY
-_INFO_FONT_SIZE_RATIO        = 1./6.
 _TABLE_FONT_SIZE_RATIO       = 2./3.
 _TABLE_TITLE_FONT_SIZE_RATIO = 2.
 _SECTOR_FONT_FILENAME        = _FONT_FILENAME
-_LIST_FONT_FILENAME          = _FONT_FILENAME
 
 ## Hex grid class.
 #
@@ -656,28 +661,28 @@ class InfoTable(object):
                   advisory=None):
 
         # Check arguments.
-        exception.arg_check(majorRow,       int,  '')
+        exception.arg_check(majorRow,       int)
         exception.arg_range_check(majorRow, 0, 9)
-        exception.arg_check(majorCol,       int,  '')
+        exception.arg_check(majorCol,       int)
         exception.arg_range_check(majorCol, 0, 9)
-        exception.arg_check(hRow,           int,  '')
+        exception.arg_check(hRow,           int)
         exception.arg_range_check(hRow,     0, 9)
-        exception.arg_check(hCol,           int,  '')
+        exception.arg_check(hCol,           int)
         exception.arg_range_check(hCol,     0, 9)
-        exception.arg_check(systemName,     str,  '')
-        exception.arg_check(worldName,      str,  '')
-        exception.arg_check(techLevel,      str,  '')
-        exception.arg_check(atmosphere,     str,  '')
-        exception.arg_check(biosphere,      str,  '')
-        exception.arg_check(population,     str,  '')
-        exception.arg_check(populationAlt,  str,  '')
-        exception.arg_check(tags,           list, '')
+        exception.arg_check(systemName,     str)
+        exception.arg_check(worldName,      str)
+        exception.arg_check(techLevel,      str)
+        exception.arg_check(atmosphere,     str)
+        exception.arg_check(biosphere,      str)
+        exception.arg_check(population,     str)
+        exception.arg_check(populationAlt,  str)
+        exception.arg_check(tags,           list)
         for t in tags:
-            exception.arg_check(t,          str,  '')
-        exception.arg_check(temperature,    str,  '')
+            exception.arg_check(t,          str)
+        exception.arg_check(temperature,    str)
         exception.arg_check(advisory,       list, list())
         for a in advisory:
-            exception.arg_check(a,          str,  '')
+            exception.arg_check(a,          str)
 
         # Calculate hex string
         hexString = '{mc}{hc}{mr}{hr}'.format(mc=majorCol,
@@ -1134,6 +1139,204 @@ class InfoTable(object):
         # Save image
         saveImage.save(path)
 
+## Orbit map image class.
+#
+# The orbit map image class is used to create images of orbit maps.
+class OrbitMap(object):
+
+    class Belt(object):
+        def __init__(self,
+                     width,
+                     height,
+                     _color):
+            # Check arguments.
+            self._width   = exception.arg_check(width,  int)
+            self._height  = exception.arg_check(height, int)
+            # Belt color.
+            self._color   = exception.arg_check(_color, color.Color)
+
+            # Working image. Leave as None until ready to draw.
+            self.workingImage = None
+
+        ## Draw belt.
+        #  @param self The object pointer.
+        def draw(self):
+            # Blank image before drawing
+            if not (self.workingImage is None):
+                self.workingImage.close()
+            self.workingImage = pilimage.new("RGBA", (self._width,self._height))
+
+    class Planet(object):
+        def __init__(self,
+                     size,
+                     _color,
+                     rings=None):
+            # Check arguments.
+            # Image size.
+            self._size  = exception.arg_check(size,   int)
+            # Planet color.
+            self._color = exception.arg_check(_color, color.Color)
+            # Does the planet have rings.
+            self._rings = exception.arg_check(rings,  bool, False)
+
+            # Planet diameter.
+            self._diameter = int(size*(_PLANET_RING_RATIO+_PLANET_RING_MARGIN_RATIO))
+            # Ring maximum diameter.
+            self._ringMax  = size
+            # Ring minimum diameter.
+            self._ringMin  = int(size*_PLANET_RING_RATIO)
+
+            # Working image. Leave as None until ready to draw.
+            self.workingImage = None
+
+        ## Draw planet.
+        #  @param self The object pointer.
+        def draw(self):
+            # Blank image before drawing
+            if not (self.workingImage is None):
+                self.workingImage.close()
+            self.workingImage = pilimage.new("RGBA", (self._size,self._size))
+
+    class Star(object):
+        def __init__(self,
+                     size,
+                     _color):
+            # Check arguments.
+            # Image size.
+            self._size  = exception.arg_check(size, int)
+            # Planet color.
+            self._color = exception.arg_check(_color, color.Color)
+
+            # Star diameter.
+            self._diameter = int(self._size*(1-_STAR_BLUR_RATIO))
+            # Star blur radius.
+            self._blurRadius = int(self._size*_STAR_BLUR_RATIO)
+
+            # Working image. Leave as None until ready to draw.
+            self.workingImage = None
+
+        ## Draw star.
+        #  @param self The object pointer.
+        def draw(self):
+            # Blank image before drawing
+            if not (self.workingImage is None):
+                self.workingImage.close()
+            self.workingImage = pilimage.new("RGBA", (self._size,self._size))
+
+    class Station(object):
+        def __init__(self,
+                     size,
+                     _color=None):
+            # Check arguments.
+            # Image size.
+            self._size  = exception.arg_check(size, int)
+            # Station color.
+            self._color = exception.arg_check(_color, color.Color, _SYSTEM_COLOR)
+
+            # Working image. Leave as None until ready to draw.
+            self.workingImage = None
+
+        ## Draw station.
+        #  @param self The object pointer.
+        def draw(self):
+            # Blank image before drawing
+            if not (self.workingImage is None):
+                self.workingImage.close()
+            self.workingImage = pilimage.new("RGBA", (self._size,self._size))
+
+    ## Orbit map class constructor.
+    #  @param self        The object pointer.
+    #  @param systemName  Name of system.
+    #  @param height      Height of the image in pixels.
+    def __init__(self,
+                 systemName,
+                 height=None):
+        # Check arguments.
+        # System name.
+        self._systemName = exception.arg_check(systemName, str)
+        # Image height.
+        self._height     = exception.arg_check(height,     int, _SYSTEM_MAP_HEIGHT)
+
+## Orbit map group class.
+#
+# The orbit map group class is used to create a group of images of 
+# orbit maps. 
+class OrbitMapGroup(object):
+    ## Orbit map group class constructor.
+    #  @param self        The object pointer.
+    #  @param height      Image height in pixels.
+    #  @param marginRatio Margin ratio relative to height.
+    def __init__(self,
+                 height,
+                 margin):
+        # Check arguments.
+        # Image height.
+        self._height = exception.arg_check(height, int)
+        # Image margin.
+        self._margin = exception.arg_check(margin, int)
+
+        # Dictionary of maps.
+        self._mapDict = dict()
+
+        # Working image. Leave as None until ready to draw.
+        self.workingImage = None
+
+    ## Add system to map group.
+    def add_system(self,
+                   majorRow,
+                   majorCol,
+                   hRow, 
+                   hCol,
+                   systemName):
+        # Check arguments.
+        exception.arg_check(majorRow,       int)
+        exception.arg_range_check(majorRow, 0, 9)
+        exception.arg_check(majorCol,       int)
+        exception.arg_range_check(majorCol, 0, 9)
+        exception.arg_check(hRow,           int)
+        exception.arg_range_check(hRow,     0, 9)
+        exception.arg_check(hCol,           int)
+        exception.arg_range_check(hCol,     0, 9)
+        exception.arg_check(systemName,     str)
+
+        # Check to see if system exists.
+        hexKey = (majorRow, majorCol, hRow, hCol)
+        if (self._mapDict.has_key(hexKey)):
+            raise exception.ExistingDictKey(hexKey)
+        else:
+            self._mapDict[hexKey] = OrbitMap(systemName)
+
+    ## Draw map group.
+    #  @param self The object pointer.
+    def draw(self):
+        # Blank image before drawing
+        if not (self.workingImage is None):
+            self.workingImage.close()
+        self.workingImage = pilimage.new("RGBA", (self._size,self._size))
+
+    ## Reset hex.
+    #  @param self The object pointer.
+    def reset_hex(self,
+                  majorRow,
+                  majorCol,
+                  hRow, 
+                  hCol):
+        # Check arguments.
+        exception.arg_check(majorRow,       int)
+        exception.arg_range_check(majorRow, 0, 9)
+        exception.arg_check(majorCol,       int)
+        exception.arg_range_check(majorCol, 0, 9)
+        exception.arg_check(hRow,           int)
+        exception.arg_range_check(hRow,     0, 9)
+        exception.arg_check(hCol,           int)
+        exception.arg_range_check(hCol,     0, 9)
+
+        # Delete hex
+        hexKey = (majorRow, majorCol, hRow, hCol)
+        if (self._mapDict.has_key(hexKey)):
+            del self._mapDict[hexKey]
+
+
 ## Sector image class.
 #
 #  The sector image class is used to create images of an SWN sector.
@@ -1208,7 +1411,8 @@ class SectorImage(object):
                                    self._rightMargin,
                                    self._background)
         # Create orbit maps.
-        #self.orbitMaps = OrbitMaps()
+        self.orbitMapGroup = OrbitMapGroup(self._height, 
+                                           self._topMargin)
 
         # Create ancillary sector info images
         #self.corporations

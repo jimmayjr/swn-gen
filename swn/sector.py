@@ -245,9 +245,9 @@ class Sector(object):
                     firstWorld = False
                     # Hex
                     row.append('{mc}{hc}{mr}{hr}'.format(mc=self.majorCol,
-                                                         hc=systemKey[0],
+                                                         hc=systemKey[1],
                                                          mr=self.majorRow,
-                                                         hr=systemKey[1]))
+                                                         hr=systemKey[0]))
                     # System name
                     row.append(system.name)
                 else:
@@ -300,7 +300,7 @@ class Sector(object):
 
     ## Sort systems by hex numbering.
     def sorted_systems(self):
-        return(sorted(self.system_hex_list(), key=lambda e: (e[0], e[1])))
+        return(sorted(self.system_hex_list(), key=lambda e: (e[1], e[0])))
 
     ## Calculate hex distances between all systems.
     def system_distances(self):
@@ -466,7 +466,7 @@ class Sector(object):
 
     ## Update images with sector data.
     def update_images(self):
-        # System hexes.
+        # System hex images.
         for (hRow,hCol) in self.system_hex_list():
             self.update_hex_image(hRow,hCol)
             
@@ -477,6 +477,7 @@ class Sector(object):
             systemData = self.hexes[(hRow,hCol)].system
             # For each world.
             for w in systemData.sorted_worlds():
+                # Fill out world info in table.
                 infoTable.add_world(self.majorRow,
                                     self.majorCol,
                                     hRow, 
@@ -492,4 +493,28 @@ class Sector(object):
                                     w.temperature,
                                     [])
 
-        # Orbit diagram.
+        # For each hex with a system.
+        for (hRow,hCol) in self.system_hex_list():
+            # System data.
+            self.update_system_map_image(hRow, hCol)
+            
+
+    ## Update system map image with system data.
+    def update_system_map_image(self, hRow, hCol):
+        systemData = self.hexes[(hRow,hCol)].system
+        # System orbit maps.
+        orbitMapGroup = self.images.orbitMapGroup
+        # Check arguments
+        hRow = exception.arg_check(hRow,int)
+        hCol = exception.arg_check(hCol,int)
+        # Reset orbit map image.
+        orbitMapGroup.reset_hex(self.majorRow,
+                                self.majorCol,
+                                hRow, 
+                                hCol)
+        # Fill out orbit map info.
+        orbitMapGroup.add_system(self.majorRow,
+                                 self.majorCol,
+                                 hRow, 
+                                 hCol, 
+                                 systemData.name)
