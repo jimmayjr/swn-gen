@@ -66,15 +66,11 @@ class Star(object):
                  color            = None,
                  colorText        = None,
                  classification   = None,
-                 spectralSubclass = None):
+                 spectralSubclass = None,
+                 luminosity       = None):
         # Check arguments
-        exception.arg_check(color,str,'')
-        exception.arg_check(colorText,str,'')
-        exception.arg_check(classification,str,'')
-        exception.arg_check(spectralSubclass,int,0)
-
-        # Star information
-        self.color            = color
-        self.colorText        = colorText
-        self.classification   = classification
-        self.spectralSubclass = spectralSubclass
+        self.color            = exception.arg_check(color,            str, '')
+        self.colorText        = exception.arg_check(colorText,        str, '')
+        self.classification   = exception.arg_check(classification,   str, '')
+        self.spectralSubclass = exception.arg_check(spectralSubclass, int, 0)
+        self.luminosity       = exception.arg_check(luminosity,       str, 'V')

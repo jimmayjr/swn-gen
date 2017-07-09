@@ -521,7 +521,43 @@ class Sector(object):
         for s in systemData.stars:
             orbitMapGroup.maps[(hRow,hCol)].add_star(s.color,
                                                      s.classification,
-                                                     s.spectralSubclass)
+                                                     s.spectralSubclass,
+                                                     s.luminosity)
         # Add planets and asteroid belts.
         for o in systemData.objects:
-            pass
+            # Planets.
+            if ( type(o) is orbitalobject.Planet ):
+                # Get world name if planet is a world.
+                planetWorld = None
+                # Orbital object has world member variable.
+                if not (o.world is None):
+                    # World object has name member variable.
+                    planetWorld = o.world.name
+                # Add planet.
+                orbitMapGroup.maps[(hRow,hCol)].add_planet(o.objectType,
+                                                           o.rings,
+                                                           planetWorld)
+                # Add stations to planet.
+                for s in o.stations:
+                    # Get station world name.
+                    stationWorld = s.world.name
+                    # Add station.
+                    orbitMapGroup.maps[(hRow,hCol)].add_station(s.objectType,
+                                                                stationWorld)
+
+                # Add moons to planet.
+                for m in o.moons:
+                    # Get world name if moon is a world.
+                    moonWorld = None
+                    # Orbital object has world member variable.
+                    if not (m.world is None):
+                        # World object has name member variable.
+                        moonWorld = m.world.name
+                    # Add moon
+                    orbitMapGroup.maps[(hRow,hCol)].add_moon(m.objectType,
+                                                             moonWorld)
+
+            # Asteroid belts.
+            elif ( type(o) is orbitalobject.AsteroidBelt ):
+                # Add belt.
+                orbitMapGroup.maps[(hRow,hCol)].add_belt(o.objectType)
