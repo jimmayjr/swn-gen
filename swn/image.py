@@ -34,14 +34,25 @@ _GRID_ALPHA                      = 200
 _IMAGE_BACKGROUND                = os.path.join(_DIR_PATH,'images/starfield.png')
 _IMAGE_BACKGROUND_BRIGHTNESS     = 0.8
 _INFO_TABLE_TITLE_ROWS           = 3
-_MOON_SMALL_DIAMETER_RATIO       = 1./40.
-_MOON_MEDIUM_DIAMETER_RATIO      = 1./30.
-_PLANET_GAS_LARGE_DIAMETER_RATIO = 6./10.
-_PLANET_GAS_SMALL_DIAMETER_RATIO = 4./10.
-_PLANET_STANDARD_DIAMETER_RATIO  = 1./10.
+_ORBIT_X_OFFSET_RATIO            = 1./5.
+_ORBIT_Y_OFFSET_RATIO            = 1./8.
+_ORBITAL_OBJECT_SIZE_RATIO_MAP = {
+    'cold stone':               1./10.,
+    'hot rock':                 1./10.,
+    'hydrocarbon astroid belt': 1./5.,
+    'ice':                      1./10.,
+    'icy asteroid belt':        1./5.,
+    'rocky':                    1./10.,
+    'large gas':                6./10.,
+    'medium moon':              1./30.,
+    'metal asteroid belt':      1./5.,
+    'rocky asteroid belt':      1./5.,
+    'small gas':                4./10.,
+    'small moon':               1./40.,
+    'space station':            1./40.}
 _PLANET_RING_ANGLE               = 30.*math.pi/180.
-_PLANET_RING_RATIO               = 8./10.
-_PLANET_RING_MARGIN_RATIO        = 1./10.
+_PLANET_RING_RATIO               = 3./10.
+_PLANET_RING_GAP_RATIO           = 1./10.
 _ROUTE_WIDTH_RATIO               = 1./10.
 _ROUTE_BLUR_SIZE_RATIO           = 0.6
 _ROUTE_COLOR                     = (179,235,250,100)
@@ -53,10 +64,11 @@ _STAR_COLOR_MAP = {
     'yellow':       color.YELLOW,
     'orange':       color.ORANGE }
 _STAR_HEX_DIAMETER_RATIO         = 1./5.
-_STAR_ORBIT_DIAMETER_RATIO       = 4.
-_STATION_SIZE_RATIO              = 1./40.
+_STAR_ORBIT_CENTER_OFFSET_RATIO  = 9./10.
+_STAR_ORBIT_DIAMETER_RATIO       = 3.
+_STAR_ORBIT_OFFSET_RATIO         = 1./3.
 _SYSTEM_COLOR                    = color.LIGHT_GREY
-_SYSTEM_MAP_HEIGHT               = 500 # px
+_SYSTEM_MAP_HEIGHT_RATIO         = 1./10.
 _SYSTEM_OUTLINE_COLOR            = color.BLACK
 _TRIANGLE_LENGTH_RATIO           = 1./6.
 _TRIANGLE_MARGIN_RATIO           = 1./40.
@@ -598,16 +610,14 @@ class InfoTable(object):
     #  @param self             The object pointer.
     #  @param sectorName       Name of the sector.
     #  @param height           Hex map height in pixels.
-    #  @param verticalMargin   Top margin in pixels.
-    #  @param horizontalMargin Bottom margin in pixels.
+    #  @param verticalMargin   Vertical margin in pixels.
+    #  @param horizontalMargin Horizontal margin in pixels.
     #  @param background       Background image.
     def __init__(self, 
                  sectorName, 
                  height, 
                  verticalMargin   = None,
                  horizontalMargin = None,
-                 leftMargin       = None,
-                 rightMargin      = None,
                  background       = None):
         # Check arguments.
         self._sectorName       = exception.arg_check(sectorName,       str)
@@ -1145,25 +1155,12 @@ class OrbitMap(object):
 
     class Belt(object):
         def __init__(self,
-                     widthRatio,
-                     heightRatio,
+                     sizeRatio,
                      _color):
             # Check arguments.
-            self._widthRatio  = exception.arg_check(widthRatio,  int)
-            self._heightRatio = exception.arg_check(heightRatio, int)
+            self.sizeRatio  = exception.arg_check(sizeRatio, float)
             # Belt color.
-            self._color       = exception.arg_check(_color, color.Color)
-
-            # Working image. Leave as None until ready to draw.
-            self.workingImage = None
-
-        ## Draw belt.
-        #  @param self The object pointer.
-        def draw(self):
-            # Blank image before drawing
-            if not (self.workingImage is None):
-                self.workingImage.close()
-            self.workingImage = pilimage.new("RGBA", (self._width,self._height))
+            self.color      = exception.arg_check(_color, color.Color)
 
     class Sphere(object):
         def __init__(self,
@@ -1172,32 +1169,20 @@ class OrbitMap(object):
                      rings=None):
             # Check arguments.
             # Sphere size ratio.
-            self._sizeRatio = exception.arg_check(sizeRatio, int)
+            self.sizeRatio = exception.arg_check(sizeRatio, float)
             # Sphere color.
-            self._color     = exception.arg_check(_color, color.Color)
+            self.color     = exception.arg_check(_color, color.Color)
             # Does the sphere have rings.
-            self._rings     = exception.arg_check(rings, bool, False)
+            self.rings     = exception.arg_check(rings, bool, False)
 
-            # Sphere diameter.
-            self._diameterRatio = int(sizeRatio*(_PLANET_RING_RATIO+_PLANET_RING_MARGIN_RATIO))
-            # Ring maximum diameter.
-            self._ringMaxRatio  = sizeRatio
-            # Ring minimum diameter.
-            self._ringMinRatio  = int(sizeRatio*_PLANET_RING_RATIO)
+            # Default diameter to size.
+            self.diameterRatio = self.sizeRatio
+            # Increase size if there are rings
+            if (self.rings):
+                self.sizeRatio = (1+_PLANET_RING_RATIO)*self.diameterRatio*math.cos(_PLANET_RING_ANGLE)
 
             # Satellites around sphere.
             self.satellites = list()
-
-            # Working image. Leave as None until ready to draw.
-            self.workingImage = None
-
-        ## Draw sphere.
-        #  @param self The object pointer.
-        def draw(self):
-            # Blank image before drawing
-            if not (self.workingImage is None):
-                self.workingImage.close()
-            self.workingImage = pilimage.new("RGBA", (self._size,self._size))
 
     class Star(object):
         def __init__(self,
@@ -1206,27 +1191,16 @@ class OrbitMap(object):
                      classification):
             # Check arguments.
             # Star size ratio.
-            self._sizeRatio     = exception.arg_check(sizeRatio, int)
+            self.sizeRatio      = exception.arg_check(sizeRatio, float)
             # Star color.
-            self._color         = exception.arg_check(_color, color.Color)
+            self.color          = exception.arg_check(_color, color.Color)
             # Spectral classification.
             self.classification = exception.arg_check(classification, str)
 
             # Star diameter.
-            self._diameterRatio   = int(self._sizeRatio*(1-_STAR_BLUR_RATIO))
+            self.diameterRatio   = self.sizeRatio*(1-_STAR_BLUR_RATIO)
             # Star blur radius.
-            self._blurRadiusRatio = int(self._sizeRatio*_STAR_BLUR_RATIO)
-
-            # Working image. Leave as None until ready to draw.
-            self.workingImage = None
-
-        ## Draw star.
-        #  @param self The object pointer.
-        def draw(self):
-            # Blank image before drawing
-            if not (self.workingImage is None):
-                self.workingImage.close()
-            self.workingImage = pilimage.new("RGBA", (self._size,self._size))
+            self.blurRadiusRatio = self.sizeRatio*_STAR_BLUR_RATIO
 
     class Station(object):
         def __init__(self,
@@ -1234,38 +1208,38 @@ class OrbitMap(object):
                      _color=None):
             # Check arguments.
             # Station size ratio.
-            self._sizeRatio = exception.arg_check(sizeRatio, int)
+            self.sizeRatio = exception.arg_check(sizeRatio, float)
             # Station color.
-            self._color     = exception.arg_check(_color,    color.Color, _SYSTEM_COLOR)
-
-            # Working image. Leave as None until ready to draw.
-            self.workingImage = None
-
-        ## Draw station.
-        #  @param self The object pointer.
-        def draw(self):
-            # Blank image before drawing
-            if not (self.workingImage is None):
-                self.workingImage.close()
-            self.workingImage = pilimage.new("RGBA", (self._size,self._size))
+            self.color     = exception.arg_check(_color,    color.Color, _SYSTEM_COLOR)
 
     ## Orbit map class constructor.
-    #  @param self        The object pointer.
-    #  @param systemName  Name of system.
-    #  @param height      Height of the image in pixels.
+    #  @param self            The object pointer.
+    #  @param systemName      Name of system.
+    #  @param referenceHeight Reference height of the image in pixels.
     def __init__(self,
                  systemName,
-                 height=None):
+                 referenceHeight):
         # Check arguments.
         # System name.
-        self._systemName = exception.arg_check(systemName, str)
-        # Image height.
-        self._height     = exception.arg_check(height,     int, _SYSTEM_MAP_HEIGHT)
+        self._systemName      = exception.arg_check(systemName,      str)
+        # Image reference height.
+        self._referenceHeight = exception.arg_check(referenceHeight, int)
 
         # Orbital objects.
         self._objects = list()
         # Stars.
         self._stars   = list()
+
+        # Working image. Leave as None until ready to draw.
+        self.workingImage = None
+
+    ## Set orbit map image parameters.
+    #  @param self            The object pointer.
+    #  @param referenceHeight Hex map height in pixels.
+    def _set_params(self, 
+                    referenceHeight = None):
+        # Check arguments
+        self._referenceHeight = exception.arg_check(referenceHeight, int, self._height)
 
     ## Add asteroid belt to map in map group.
     def add_belt(self,
@@ -1274,26 +1248,22 @@ class OrbitMap(object):
         exception.arg_check(beltType, str)
 
         # Add belt.
-        # TODO: Set width
-        # TODO: Set height
         # TODO: Set color
-        self._objects.append(self.Belt(10,
-                                       10,
+        self._objects.append(self.Belt(_ORBITAL_OBJECT_SIZE_RATIO_MAP[beltType],
                                        color.WHITE))
 
     ## Add moon to last planet in map in map group.
     def add_moon(self,
-                    stationType,
-                    worldName=None):
+                 moonType,
+                 worldName=None):
         # Check arguments.
-        exception.arg_check(stationType, str)
+        exception.arg_check(moonType, str)
         exception.arg_check(worldName,   str)
 
         # Add station.
-        # TODO: Set size
         # TODO: Set color
         sphereSatellites = self._objects[len(self._objects)-1].satellites
-        sphereSatellites.append(self.Sphere(10,
+        sphereSatellites.append(self.Sphere(_ORBITAL_OBJECT_SIZE_RATIO_MAP[moonType],
                                             color.WHITE))
 
     ## Add planet to map in map group.
@@ -1307,9 +1277,8 @@ class OrbitMap(object):
         exception.arg_check(worldName,  str)
 
         # Add planet.
-        # TODO: Set size
         # TODO: Set color
-        self._objects.append(self.Sphere(10,
+        self._objects.append(self.Sphere(_ORBITAL_OBJECT_SIZE_RATIO_MAP[planetType],
                                          color.WHITE,
                                          rings))
 
@@ -1328,8 +1297,7 @@ class OrbitMap(object):
         # Classification string.
         classificationString = classification+str(spectralSubclass)+luminosity
         # Add star.
-        # TODO: Set size
-        self._stars.append(self.Star(10,
+        self._stars.append(self.Star(_STAR_ORBIT_DIAMETER_RATIO,
                                      _STAR_COLOR_MAP[_color],
                                      classificationString))
 
@@ -1342,11 +1310,103 @@ class OrbitMap(object):
         exception.arg_check(worldName,   str)
 
         # Add station.
-        # TODO: Set size
         # TODO: Set color
         sphereSatellites = self._objects[len(self._objects)-1].satellites
-        sphereSatellites.append(self.Station(10,
+        sphereSatellites.append(self.Station(_ORBITAL_OBJECT_SIZE_RATIO_MAP[stationType],
                                              color.WHITE))
+
+    ## Draw map image.
+    def draw(self):
+        # Blank image before drawing
+        if not (self.workingImage is None):
+            self.workingImage.close()
+
+        # Initialize width and height.
+        # Width is 0.
+        # Height is reference height.
+        self.width  = 0
+        self.height = self._referenceHeight
+        xOffset = int(_ORBIT_X_OFFSET_RATIO*self._referenceHeight)
+        yOffset = int(_ORBIT_Y_OFFSET_RATIO*self._referenceHeight)
+        # Update width from stars.
+        # Initialize center y position.
+        cY = self._referenceHeight/2
+        for s in self._stars:
+            # Size of star.
+            size = int(s.sizeRatio*self._referenceHeight)
+            halfSize = size/2
+            # Set center x position for star
+            cX = halfSize - int(size * _STAR_ORBIT_CENTER_OFFSET_RATIO)
+            # Edge of star.
+            edge = cX + halfSize
+            # New width is max of current width or edge of star.
+            self.width = max(edge, self.width)
+        # Update left-most position for next body by adding offset.
+        left = self.width + xOffset
+        # Update maximum width from the offset.
+        self.width = left
+        # Update width and height by placement of orbital bodies.
+        for o in self._objects:
+            # Size of body.
+            size = int(o.sizeRatio*self._referenceHeight)
+            halfSize = size/2
+            # Calculate new center
+            cX = left + halfSize
+            # Update right and top-most positions due to size.
+            right = left + size
+            top   = cY + halfSize
+            # Belts do not affect height.
+            if not (type(o) is self.Belt):
+                # Cycle through all satellites.
+                for s in o.satellites:
+                    # Size of satellite.
+                    size = int(s.sizeRatio*self._referenceHeight)
+                    halfSize = size/2
+                    # Update positions.
+                    bottom = top + yOffset
+                    cY     = bottom + halfSize
+                    top    = bottom + size
+                    # Update maximum height from the satellite size.
+                    self.height = max(top+yOffset, self.height)
+            # Update left-most position for next body by adding offset.
+            left = self.width + xOffset
+            # Update maximum width from the offset.
+            self.width = max(left, self.width)
+            # Reset center
+            cY = int(self._referenceHeight/2)
+
+        print(self._systemName,self.width,self.height)
+        # Set new working image.
+        self.workingImage = pilimage.new("RGBA", (self.width, self.height))
+        drawingImage = pildraw.Draw(self.workingImage)
+
+        # Initialize center y position.
+        cY = self.height - self._referenceHeight/2
+        for s in self._stars:
+            # Size of star.
+            size = int(s.sizeRatio*self._referenceHeight)
+            halfSize = size/2
+            # Set center x position for star
+            cX = halfSize - int(size * _STAR_ORBIT_CENTER_OFFSET_RATIO)
+            print(cX, cY)
+            # Edge of star.
+            edge = cX + halfSize
+            # Draw star
+            drawingImage.ellipse([(cX-halfSize, cY-halfSize),
+                                  (cX+halfSize, cY+halfSize)],
+                                 outline=color.BLACK.rgba(),
+                                 fill = s.color.rgba())
+            # Draw next star lower
+            cY -= int(_STAR_ORBIT_OFFSET_RATIO*self._referenceHeight)
+
+    ## Resize map image.
+    def resize(self,
+               referenceHeight):
+        # Check arguments
+        exception.arg_check(referenceHeight, int)
+
+        # Set resized parameters.
+        self._set_params(referenceHeight)
 
 ## Orbit map group class.
 #
@@ -1412,7 +1472,8 @@ class OrbitMapGroup(object):
         if (self.system_exists(hRow, hCol)):
             raise exception.ExistingDictKey(hexKey)
         else:
-            self.maps[hexKey] = OrbitMap(systemName)
+            self.maps[hexKey] = OrbitMap(systemName, 
+                                         int(self._height*_SYSTEM_MAP_HEIGHT_RATIO))
 
     ## Draw map group.
     #  @param self The object pointer.
@@ -1420,7 +1481,13 @@ class OrbitMapGroup(object):
         # Blank image before drawing
         if not (self.workingImage is None):
             self.workingImage.close()
-        self.workingImage = pilimage.new("RGBA", (self._size,self._size))
+
+        # Draw maps
+        for mKey in self.maps.iterkeys():
+            self.maps[mKey].draw()
+
+        # New working image.
+        #self.workingImage = pilimage.new("RGBA", (self._size,self._size))
 
     ## Reset hex.
     #  @param self The object pointer.
@@ -1437,6 +1504,24 @@ class OrbitMapGroup(object):
         hexKey = (hRow, hCol)
         if (self.maps.has_key(hexKey)):
             del self.maps[hexKey]
+
+    ## Save orbit map group.
+    def save(self, path):
+        # Check arguments.
+        path = exception.arg_check(path, str)
+
+        # Draw image if it hasn't been
+        if self.workingImage is None:
+            self.draw()
+
+        ## DEBUG
+        saveMap = self.maps[self.maps.keys()[4]]
+        saveImage = saveMap.workingImage.resize((saveMap.width/_SECTOR_IMAGE_SCALE,
+                                                 saveMap.height/_SECTOR_IMAGE_SCALE),
+                                                pilimage.LANCZOS)
+
+        # Save image
+        saveImage.save(path)
 
     ## Check to see if system exists.
     def system_exists(self,
@@ -1595,7 +1680,7 @@ class SectorImage(object):
         # Draw layers ----------------------------------------------------------
         self.hexMap.draw()
         self.infoTable.draw()
-        #self.orbitMaps.draw()
+        self.orbitMapGroup.draw()
 
         # Determine width
 
@@ -1627,26 +1712,28 @@ class SectorImage(object):
         # Resize sector main images
         self.hexMap.resize(hexSize)
         self.infoTable.resize(height)
-        #self.orbitMaps.resize()
-
+        self.orbitMapGroup.resize()
 
     ## Save sector hex map.
     def save_sector_map(self, path):
-        # Check arguments
+        # Check arguments.
         path = exception.arg_check(path, str)
-        # Save hexmap
+        # Save hexmap.
         self.hexMap.save(path)
 
     ## Save sector info table.
     def save_sector_info(self, path):
-        # Check arguments
+        # Check arguments.
         path = exception.arg_check(path, str)
-        # Save hexmap
+        # Save hexmap.
         self.infoTable.save(path)
 
     ## Save sector orbit maps.
-    def save_sector_orbits(self):
-        raise Exception('Not implemented yet.')
+    def save_sector_orbits(self, path):
+        # Check arguments.
+        path = exception.arg_check(path, str)
+        # Save map group.
+        self.orbitMapGroup.save(path)
 
     ## Save combined sector hex map, info table, and orbit maps.
     def save_sector_combined(self):
