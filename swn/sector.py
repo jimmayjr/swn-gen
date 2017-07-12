@@ -522,7 +522,9 @@ class Sector(object):
             orbitMapGroup.maps[(hRow,hCol)].add_star(s.color,
                                                      s.classification,
                                                      s.spectralSubclass,
-                                                     s.luminosity)
+                                                     s.luminosity,
+                                                     s.solarMass,
+                                                     s.solarRadius)
         # Add planets and asteroid belts.
         for o in systemData.objects:
             # Planets.

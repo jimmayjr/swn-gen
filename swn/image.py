@@ -34,22 +34,36 @@ _GRID_ALPHA                      = 200
 _IMAGE_BACKGROUND                = os.path.join(_DIR_PATH,'images/starfield.png')
 _IMAGE_BACKGROUND_BRIGHTNESS     = 0.8
 _INFO_TABLE_TITLE_ROWS           = 3
-_ORBIT_X_OFFSET_RATIO            = 1./5.
-_ORBIT_Y_OFFSET_RATIO            = 1./8.
+_ORBIT_X_OFFSET_RATIO            = 1./7.
+_ORBIT_Y_OFFSET_RATIO            = 1./15.
+_ORBITAL_OBJECT_COLOR_MAP = {
+    'cold stone':               color.Color(80,96,119),
+    'hot rock':                 color.Color(254,218,124),
+    'hydrocarbon astroid belt': color.Color(214,213,147),
+    'ice':                      color.Color(207,245,246),
+    'icy asteroid belt':        color.Color(207,245,246),
+    'rocky':                    color.Color(104,95,78),
+    'large gas':                color.Color(165,142,111),
+    'medium moon':              color.Color(247,247,247),
+    'metal asteroid belt':      color.Color(140,143,147),
+    'rocky asteroid belt':      color.Color(104,95,78),
+    'small gas':                color.Color(173,216,180),
+    'small moon':               color.Color(247,247,247),
+    'space station':            color.WHITE}
 _ORBITAL_OBJECT_SIZE_RATIO_MAP = {
-    'cold stone':               1./10.,
-    'hot rock':                 1./10.,
+    'cold stone':               1./5.,
+    'hot rock':                 1./5.,
     'hydrocarbon astroid belt': 1./5.,
-    'ice':                      1./10.,
+    'ice':                      1./5.,
     'icy asteroid belt':        1./5.,
-    'rocky':                    1./10.,
-    'large gas':                6./10.,
-    'medium moon':              1./30.,
+    'rocky':                    1./5.,
+    'large gas':                7./10.,
+    'medium moon':              1./11.,
     'metal asteroid belt':      1./5.,
     'rocky asteroid belt':      1./5.,
-    'small gas':                4./10.,
-    'small moon':               1./40.,
-    'space station':            1./40.}
+    'small gas':                5./10.,
+    'small moon':               1./20.,
+    'space station':            1./15.}
 _PLANET_RING_ANGLE               = 30.*math.pi/180.
 _PLANET_RING_RATIO               = 3./10.
 _PLANET_RING_GAP_RATIO           = 1./10.
@@ -58,15 +72,16 @@ _ROUTE_BLUR_SIZE_RATIO           = 0.6
 _ROUTE_COLOR                     = (179,235,250,100)
 _STAR_BLUR_RATIO                 = 1./10.
 _STAR_COLOR_MAP = {
-    'red':          color.RED,
-    'white':        color.WHITE,
-    'light yellow': color.Color(255,255,150),
-    'yellow':       color.YELLOW,
-    'orange':       color.ORANGE }
+    'red':          color.Color(250,191,113),
+    'white':        color.Color(205,214,253),
+    'light yellow': color.Color(251,248,255),
+    'yellow':       color.Color(254,245,230),
+    'orange':       color.Color(251,221,186) }
 _STAR_HEX_DIAMETER_RATIO         = 1./5.
-_STAR_ORBIT_CENTER_OFFSET_RATIO  = 9./10.
-_STAR_ORBIT_DIAMETER_RATIO       = 3.
-_STAR_ORBIT_OFFSET_RATIO         = 1./3.
+_STAR_ORBIT_BLUR_RATIO           = 1./75.
+_STAR_ORBIT_CENTER_OFFSET_RATIO  = 2./10.
+_STAR_ORBIT_DIAMETER_RATIO       = 5.
+_STAR_ORBIT_OFFSET_RATIO         = 5./20.
 _SYSTEM_COLOR                    = color.LIGHT_GREY
 _SYSTEM_MAP_HEIGHT_RATIO         = 1./10.
 _SYSTEM_OUTLINE_COLOR            = color.BLACK
@@ -1250,7 +1265,7 @@ class OrbitMap(object):
         # Add belt.
         # TODO: Set color
         self._objects.append(self.Belt(_ORBITAL_OBJECT_SIZE_RATIO_MAP[beltType],
-                                       color.WHITE))
+                                       _ORBITAL_OBJECT_COLOR_MAP[beltType]))
 
     ## Add moon to last planet in map in map group.
     def add_moon(self,
@@ -1264,7 +1279,7 @@ class OrbitMap(object):
         # TODO: Set color
         sphereSatellites = self._objects[len(self._objects)-1].satellites
         sphereSatellites.append(self.Sphere(_ORBITAL_OBJECT_SIZE_RATIO_MAP[moonType],
-                                            color.WHITE))
+                                            _ORBITAL_OBJECT_COLOR_MAP[moonType]))
 
     ## Add planet to map in map group.
     def add_planet(self,
@@ -1279,7 +1294,7 @@ class OrbitMap(object):
         # Add planet.
         # TODO: Set color
         self._objects.append(self.Sphere(_ORBITAL_OBJECT_SIZE_RATIO_MAP[planetType],
-                                         color.WHITE,
+                                         _ORBITAL_OBJECT_COLOR_MAP[planetType],
                                          rings))
 
     ## Add star to system in map group.
@@ -1287,17 +1302,21 @@ class OrbitMap(object):
                  _color,
                  classification,
                  spectralSubclass,
-                 luminosity):
+                 luminosity,
+                 solarMass,
+                 solarRadius):
         # Check arguments.
         exception.arg_check(_color,           str)
         exception.arg_check(classification,   str)
         exception.arg_check(spectralSubclass, int)
         exception.arg_check(luminosity,       str)
+        exception.arg_check(solarMass,        float)
+        exception.arg_check(solarRadius,      float)
 
         # Classification string.
         classificationString = classification+str(spectralSubclass)+luminosity
         # Add star.
-        self._stars.append(self.Star(_STAR_ORBIT_DIAMETER_RATIO,
+        self._stars.append(self.Star(_STAR_ORBIT_DIAMETER_RATIO*solarRadius,
                                      _STAR_COLOR_MAP[_color],
                                      classificationString))
 
@@ -1313,7 +1332,7 @@ class OrbitMap(object):
         # TODO: Set color
         sphereSatellites = self._objects[len(self._objects)-1].satellites
         sphereSatellites.append(self.Station(_ORBITAL_OBJECT_SIZE_RATIO_MAP[stationType],
-                                             color.WHITE))
+                                             _ORBITAL_OBJECT_COLOR_MAP[stationType]))
 
     ## Draw map image.
     def draw(self):
@@ -1323,81 +1342,138 @@ class OrbitMap(object):
 
         # Initialize width and height.
         # Width is 0.
-        # Height is reference height.
+        # Height is reference height scaled by the number of stars.
         self.width  = 0
         self.height = self._referenceHeight
         xOffset = int(_ORBIT_X_OFFSET_RATIO*self._referenceHeight)
         yOffset = int(_ORBIT_Y_OFFSET_RATIO*self._referenceHeight)
-        # Update width from stars.
-        # Initialize center y position.
-        cY = self._referenceHeight/2
-        for s in self._stars:
-            # Size of star.
-            size = int(s.sizeRatio*self._referenceHeight)
-            halfSize = size/2
-            # Set center x position for star
-            cX = halfSize - int(size * _STAR_ORBIT_CENTER_OFFSET_RATIO)
-            # Edge of star.
-            edge = cX + halfSize
-            # New width is max of current width or edge of star.
-            self.width = max(edge, self.width)
-        # Update left-most position for next body by adding offset.
-        left = self.width + xOffset
-        # Update maximum width from the offset.
-        self.width = left
-        # Update width and height by placement of orbital bodies.
-        for o in self._objects:
-            # Size of body.
-            size = int(o.sizeRatio*self._referenceHeight)
-            halfSize = size/2
-            # Calculate new center
-            cX = left + halfSize
-            # Update right and top-most positions due to size.
-            right = left + size
-            top   = cY + halfSize
-            # Belts do not affect height.
-            if not (type(o) is self.Belt):
-                # Cycle through all satellites.
-                for s in o.satellites:
-                    # Size of satellite.
-                    size = int(s.sizeRatio*self._referenceHeight)
-                    halfSize = size/2
-                    # Update positions.
-                    bottom = top + yOffset
-                    cY     = bottom + halfSize
-                    top    = bottom + size
-                    # Update maximum height from the satellite size.
-                    self.height = max(top+yOffset, self.height)
-            # Update left-most position for next body by adding offset.
-            left = self.width + xOffset
-            # Update maximum width from the offset.
-            self.width = max(left, self.width)
-            # Reset center
-            cY = int(self._referenceHeight/2)
 
-        print(self._systemName,self.width,self.height)
-        # Set new working image.
-        self.workingImage = pilimage.new("RGBA", (self.width, self.height))
-        drawingImage = pildraw.Draw(self.workingImage)
+        # Draw orbit map.
+        # First pass, determine image size.
+        # Second pass, draw image.
+        for job in ['size','draw']:
+            # Set new working image.
+            if (job is 'draw'):
+                self.workingImage = pilimage.new("RGBA", (self.width, self.height))
+                drawingImage = pildraw.Draw(self.workingImage)
+            # Initialize center y position.
+            cY = self._referenceHeight/2
+            # Initialize right of current object.
+            right = 0
+            # For each star. Draw largest to smallest
+            starCountdown = len(self._stars)
+            starCenterOffset = int(self._referenceHeight*_STAR_ORBIT_CENTER_OFFSET_RATIO)
+            for s in sorted(self._stars, key=lambda r: r.sizeRatio, reverse=True):
+                # Size of star.
+                size = int(s.sizeRatio*self._referenceHeight)
+                halfSize = size/2
+                # Set right edge position for star.
+                right = starCenterOffset*starCountdown
+                # Set center x of star.
+                cX = right - halfSize
+                # Draw star.
+                if (job is 'draw'):
+                    # Create star image.
+                    starShadow       = pilimage.new("RGBA", (self.width, self.height))
+                    starShadowDrawingImage = pildraw.Draw(starShadow)
+                    starForeground   = pilimage.new("RGBA", (self.width, self.height), s.color.rgba())
+                    starBlurMask     = pilimage.new("L", (self.width, self.height), 0)
+                    starDrawingImage = pildraw.Draw(starBlurMask)
+                    # Draw star ellipse.
+                    starDrawingImage.ellipse([(cX-halfSize, cY-halfSize),
+                                              (cX+halfSize, cY+halfSize)],
+                                             fill = 255)
+                    starShadowDrawingImage.ellipse([(cX-halfSize, cY-halfSize),
+                                                    (cX+halfSize, cY+halfSize)],
+                                                   fill = color.GREY.rgba(50))
+                    # Blur ellipse.
+                    starBlurRadius = int(self._referenceHeight*_STAR_ORBIT_BLUR_RATIO)
+                    starBlurMask = starBlurMask.filter(pilfilter.GaussianBlur(starBlurRadius))
+                    # Paste ellipse.
+                    self.workingImage = pilimage.alpha_composite(self.workingImage, starShadow)
+                    self.workingImage = pilimage.composite(starForeground, self.workingImage, starBlurMask)
+                    # Reset drawing image
+                    drawingImage = pildraw.Draw(self.workingImage)
+                # Decrement star count.
+                starCountdown -= 1
+            # Offset stars by more than planets
+            right = starCenterOffset*len(self._stars) + xOffset
+            # New width is max of right of stars or current width.
+            if (job is 'size'):
+                self.width = max(right, self.width)
+            # For each orbital body.
+            for o in self._objects:
+                # Size of body.
+                size = int(o.sizeRatio*self._referenceHeight)
+                halfSize = size/2
+                # Reinitialize center y position.
+                cY = self._referenceHeight/2
+                # Update left-most position for this body by adding offset.
+                left = right + xOffset
+                # Calculate new center
+                cX = left + halfSize
+                # Update right and bottom-most positions due to size.
+                right  = left + size
+                bottom = cY + halfSize
+                # Update maximum width from the offset.
+                if (job is 'size'):
+                    self.width = max(right+xOffset, self.width)
+                # For belts.
+                if (type(o) is self.Belt):
+                    if (job is 'draw'):
+                        drawingImage.rectangle([(cX-halfSize, 0),
+                                               (cX+halfSize,  self.height)],
+                                              fill = o.color.rgba())
+                # For other bodies.
+                else:
+                    # Draw body
+                    if (job is 'draw'):
+                        drawingImage.ellipse([(cX-halfSize, cY-halfSize),
+                                              (cX+halfSize, cY+halfSize)],
+                                             fill = o.color.rgba())
+                    # Cycle through all satellites.
+                    for s in o.satellites:
+                        # Size of satellite.
+                        size = int(s.sizeRatio*self._referenceHeight)
+                        halfSize = size/2
+                        # Update positions.
+                        top    = bottom + yOffset
+                        cY     = top + halfSize
+                        bottom = top + size
+                        # Update maximum height from the satellite size.
+                        if (job is 'size'):
+                            self.height = max(bottom+yOffset, self.height)
+                        # Draw body
+                        if (job is 'draw'):
+                            # Draw stations.
+                            if (type(s) is self.Station):
+                                # Draw main truss.
+                                drawingImage.rectangle([(cX-halfSize, cY-int(size*0.075)),
+                                                        (cX+halfSize, cY+int(size*0.075))],
+                                                       fill=s.color.rgba())
+                                # Draw solar arrays.
+                                drawingImage.rectangle([(cX-halfSize,                cY-halfSize),
+                                                        (cX-halfSize+int(size*0.05), cY+halfSize)],
+                                                       fill=s.color.rgba())
+                                drawingImage.rectangle([(cX-halfSize+int(3*size*0.05),   cY-halfSize),
+                                                        (cX-halfSize+int(4*size*0.05), cY+halfSize)],
+                                                       fill=s.color.rgba())
+                                drawingImage.rectangle([(cX+halfSize,                cY-halfSize),
+                                                        (cX+halfSize-int(size*0.05), cY+halfSize)],
+                                                       fill=s.color.rgba())
+                                drawingImage.rectangle([(cX+halfSize-int(3*size*0.05),   cY-halfSize),
+                                                        (cX+halfSize-int(4*size*0.05), cY+halfSize)],
+                                                       fill=s.color.rgba())
+                                # Draw module.
+                                drawingImage.ellipse([(cX-int(halfSize*0.2), cY-int(halfSize*0.2)+int(size*0.15)),
+                                                      (cX+int(halfSize*0.2), cY+int(halfSize*0.2)+int(size*0.15))],
+                                                 fill = s.color.rgba())
 
-        # Initialize center y position.
-        cY = self.height - self._referenceHeight/2
-        for s in self._stars:
-            # Size of star.
-            size = int(s.sizeRatio*self._referenceHeight)
-            halfSize = size/2
-            # Set center x position for star
-            cX = halfSize - int(size * _STAR_ORBIT_CENTER_OFFSET_RATIO)
-            print(cX, cY)
-            # Edge of star.
-            edge = cX + halfSize
-            # Draw star
-            drawingImage.ellipse([(cX-halfSize, cY-halfSize),
-                                  (cX+halfSize, cY+halfSize)],
-                                 outline=color.BLACK.rgba(),
-                                 fill = s.color.rgba())
-            # Draw next star lower
-            cY -= int(_STAR_ORBIT_OFFSET_RATIO*self._referenceHeight)
+                            # Draw spherical bodies.
+                            else:
+                                drawingImage.ellipse([(cX-halfSize, cY-halfSize),
+                                                      (cX+halfSize, cY+halfSize)],
+                                                     fill = s.color.rgba())
 
     ## Resize map image.
     def resize(self,
@@ -1429,7 +1505,7 @@ class OrbitMapGroup(object):
         self._verticalMargin   = exception.arg_check(verticalMargin,   int)
         self._horizontalMargin = exception.arg_check(horizontalMargin, int)
 
-        # Dictionary of maps.
+        # Maps
         self.maps = dict()
 
         # Working image. Leave as None until ready to draw.
@@ -1515,10 +1591,12 @@ class OrbitMapGroup(object):
             self.draw()
 
         ## DEBUG
-        saveMap = self.maps[self.maps.keys()[4]]
+        # 10 has station
+        # 2 has station
+        saveMap = self.maps[self.maps.keys()[25]]
         saveImage = saveMap.workingImage.resize((saveMap.width/_SECTOR_IMAGE_SCALE,
                                                  saveMap.height/_SECTOR_IMAGE_SCALE),
-                                                pilimage.LANCZOS)
+                                                pilimage.HAMMING)
 
         # Save image
         saveImage.save(path)

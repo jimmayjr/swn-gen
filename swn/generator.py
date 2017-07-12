@@ -431,12 +431,13 @@ class Generator(object):
             #    d12 table modifies orbit position
             mainOrbit += system.TABLE_MAIN_WORLD_ORBIT_MOD[d12Mod]
             # First star color and spectral subclass
-            color            = star.TABLE_COLOR[star.TABLE_COLOR_ID[d12Mod]]
-            colorText        = star.TABLE_COLOR_TEXT[d12Mod]
-            sequence         = star.TABLE_COLOR_SEQUENCE[star.TABLE_COLOR_ID[d12Mod]]
-            spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10_star]
+            color               = star.TABLE_COLOR[star.TABLE_COLOR_ID[d12Mod]]
+            colorText           = star.TABLE_COLOR_TEXT[d12Mod]
+            sequence            = star.TABLE_COLOR_SEQUENCE[star.TABLE_COLOR_ID[d12Mod]]
+            spectralSubclass    = star.TABLE_SPECTRAL_SUBCLASS[d10_star]
+            spectralSubclassMod = np.random.random()
             # Add first star
-            systemObj.stars.append(star.Star(color, colorText, sequence, spectralSubclass))
+            systemObj.stars.append(star.Star(color, colorText, sequence, spectralSubclass, spectralSubclassMod))
             # Use modified d4 to determine if there should be a second star (ORSS)
             numStars = system.TABLE_STARS[d4Mod]
             # Add 2nd star if necessary (ORSS)
@@ -451,9 +452,10 @@ class Generator(object):
                 color            = star.TABLE_COLOR[star.TABLE_COLOR_ID[d12Mod]]
                 colorText        = star.TABLE_COLOR_TEXT[d12Mod]
                 sequence         = star.TABLE_COLOR_SEQUENCE[star.TABLE_COLOR_ID[d12Mod]]
-                spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10_star2 ]
+                spectralSubclass = star.TABLE_SPECTRAL_SUBCLASS[d10_star2]
+                spectralSubclassMod = np.random.random()
                 # Add star
-                systemObj.stars.append(star.Star(color, colorText, sequence, spectralSubclass))
+                systemObj.stars.append(star.Star(color, colorText, sequence, spectralSubclass, spectralSubclassMod))
             # Gas giants (ORSS)
             numSmallGas = system.TABLE_GAS_GIANT_SMALL[d10_gas]
             numLargeGas = system.TABLE_GAS_GIANT_LARGE[d10_gas]
